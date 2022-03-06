@@ -2,6 +2,16 @@
 *.swp
 *~.nib
 
+build/*
+.build/*
+build-iPhoneSimulator/*
+build-iPhoneOS/*
+objective-git.bridgesupport
+ObjectiveGitFramework/build/*
+ObjectiveGit-iOS.framework/*
+External/*.a
+External/*.dylib
+
 *.pbxuser
 *.perspective
 *.perspectivev3
