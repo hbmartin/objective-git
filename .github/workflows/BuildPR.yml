@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os : [ macOS-12 ]
+        os : [ macOS-13 ]
         xcode: [ Xcode_14.2, Xcode_13.4 ]
     steps:
       - name: ls Xcode
