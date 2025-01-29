@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-objective-git:
-    name: Build objective-git
+    name: Build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
