@@ -15,6 +15,7 @@ jobs:
       matrix:
         os : [ macOS-13 ]
         xcode: [ Xcode_14.1, Xcode_14.2, Xcode_15.1, Xcode_15.2 ]
+        arch: [ x86_64 ]
     steps:
       - name: ls Xcode
         run: ls -la /Applications/Xcode*
@@ -34,6 +35,6 @@ jobs:
         run: |
           openssl version
       - name: Test project
-        run: xcodebuild -workspace ObjectiveGitFramework.xcworkspace -scheme "ObjectiveGit Mac" test ARCHS="x86_64"
+        run: xcodebuild -workspace ObjectiveGitFramework.xcworkspace -scheme "ObjectiveGit Mac" test ARCHS="${{ matrix.arch }}"
       - name: Archive project
-        run: xcodebuild -workspace ObjectiveGitFramework.xcworkspace -scheme "ObjectiveGit Mac" archive ARCHS="x86_64"
+        run: xcodebuild -workspace ObjectiveGitFramework.xcworkspace -scheme "ObjectiveGit Mac" archive ARCHS="${{ matrix.arch }}"
