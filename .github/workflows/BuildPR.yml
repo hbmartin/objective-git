@@ -40,6 +40,9 @@ jobs:
       - name: Show openssl version
         run: |
           openssl version
+      - name: Unlink openssl 3
+        run: |
+          brew unlink openssl@3
 #      - name: Test project
 #        run: xcodebuild -workspace ObjectiveGitFramework.xcworkspace -scheme "ObjectiveGit Mac" test ARCHS="${{ matrix.arch }}"
       - name: Archive project
