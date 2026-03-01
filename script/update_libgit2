@@ -19,7 +19,7 @@ else
   echo "Running on a Apple x86"
   export ARCH_PREFIX=/usr/local
 fi
-export PKG_CONFIG_PATH=$ARCH_PREFIX/opt/openssl/lib/pkgconfig
+export PKG_CONFIG_PATH=$ARCH_PREFIX/opt/openssl/lib/pkgconfig:$ARCH_PREFIX/lib/pkgconfig
 
 # augment path to help it find cmake installed in /usr/local/bin,
 # e.g. via brew. Xcode's Run Script phase doesn't seem to honor
@@ -28,7 +28,6 @@ PATH="$ARCH_PREFIX/bin:$PATH"
 
 cmake --version
 cmake -DBUILD_SHARED_LIBS:BOOL=OFF \
-  -DLIBSSH2_INCLUDE_DIRS:PATH=$ARCH_PREFIX/include/ \
   -DBUILD_CLAR:BOOL=OFF \
   -DTHREADSAFE:BOOL=ON \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
