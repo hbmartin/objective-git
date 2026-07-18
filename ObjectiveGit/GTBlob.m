@@ -84,7 +84,7 @@
 	NSParameterAssert(repository != nil);
 
 	git_oid oid;
-	int gitError = git_blob_create_frombuffer(&oid, repository.git_repository, [data bytes], data.length);
+	int gitError = git_blob_create_from_buffer(&oid, repository.git_repository, [data bytes], data.length);
 	if(gitError < GIT_OK) {
 		if(error != NULL) {
 			*error = [NSError git_errorFor:gitError description:@"Failed to create blob from NSData"];
@@ -100,7 +100,7 @@
 	NSParameterAssert(repository != nil);
 
 	git_oid oid;
-	int gitError = git_blob_create_fromdisk(&oid, repository.git_repository, [[file path] fileSystemRepresentation]);
+	int gitError = git_blob_create_from_disk(&oid, repository.git_repository, [[file path] fileSystemRepresentation]);
 	if(gitError < GIT_OK) {
 		if(error != NULL) {
 			*error = [NSError git_errorFor:gitError description:@"Failed to create blob from NSURL"];

@@ -41,13 +41,17 @@ function build_libgit2 ()
     cmake \
         -DCMAKE_C_COMPILER_WORKS:BOOL=ON \
         -DBUILD_SHARED_LIBS:BOOL=OFF \
+        -DBUILD_TESTS:BOOL=OFF \
+        -DBUILD_CLI:BOOL=OFF \
+        -DBUILD_EXAMPLES:BOOL=OFF \
+        -DUSE_THREADS:BOOL=ON \
+        -DUSE_SSH:STRING=libssh2 \
+        -DUSE_HTTPS:STRING=SecureTransport \
         -DCMAKE_PREFIX_PATH:PATH="${INSTALL_PATH}/" \
         -DPKG_CONFIG_USE_CMAKE_PREFIX_PATH:BOOL=ON \
         -DCMAKE_INSTALL_PREFIX:PATH="${ARCH_INSTALL_PATH}/" \
-        -DBUILD_CLAR:BOOL=OFF \
-        -DTHREADSAFE:BOOL=ON \
-        -DCURL:BOOL=OFF \
         -DCMAKE_C_FLAGS:STRING="-fembed-bitcode" \
+        -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5 \
         "${SYS_ROOT}" \
         -DCMAKE_OSX_ARCHITECTURES:STRING="${ARCH}" \
         "${ROOT_PATH}/External/libgit2" >> "${LOG}" 2>&1
