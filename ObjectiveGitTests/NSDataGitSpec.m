@@ -52,6 +52,17 @@ describe(@"+git_dataWithBuffer:", ^{
 		expect(@(buffer.size)).to(equal(@0));
 		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
 	});
+
+	it(@"should safely consume a malformed buffer with a NULL pointer", ^{
+		git_buf_free(&buffer);
+		buffer = (git_buf)GIT_BUF_INIT_CONST(NULL, 1);
+
+		NSData *data = [NSData git_dataWithBuffer:&buffer];
+
+		expect(data).to(equal([NSData data]));
+		expect(@(buffer.size)).to(equal(@0));
+		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
+	});
 });
 
 describe(@"git_buf", ^{
@@ -66,6 +77,21 @@ describe(@"git_buf", ^{
 		git_buf buffer = data.git_buf;
 		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:data.bytes]));
 		expect(@(buffer.size)).to(equal(@(data.length)));
+	});
+
+	it(@"should copy and consume a borrowed buffer without freeing its NSData storage", ^{
+		NSMutableData *source = [NSMutableData dataWithLength:4096];
+		memset(source.mutableBytes, 0xA5, source.length);
+		git_buf buffer = source.git_buf;
+
+		NSData *copy = [NSData git_dataWithBuffer:&buffer];
+		((unsigned char *)source.mutableBytes)[0] = 0x5A;
+
+		expect(@(copy.length)).to(equal(@4096));
+		expect(@(((const unsigned char *)copy.bytes)[0])).to(equal(@0xA5));
+		expect(@(((const unsigned char *)source.bytes)[0])).to(equal(@0x5A));
+		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
+		expect(@(buffer.size)).to(equal(@0));
 	});
 });
 

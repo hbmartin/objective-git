@@ -13,6 +13,8 @@
 // which was removed from the public API in libgit2 1.x. Reimplemented here with
 // direct byte operations so that `-git_isBinary` keeps its previous behavior.
 static BOOL GTDataLooksBinary(const void *bytes, NSUInteger length) {
+	if (bytes == NULL || length == 0) return NO;
+
 	const unsigned char *scan = bytes;
 	const unsigned char *end = scan + length;
 	int printable = 0, nonprintable = 0;
@@ -56,6 +58,17 @@ static BOOL GTDataLooksBinary(const void *bytes, NSUInteger length) {
 	return (printable >> 7) < nonprintable;
 }
 
+// Libgit2-owned output buffers carry their allocation size in `reserved`.
+// Buffers created by `-git_buf` (and legacy constant buffers) leave it at zero
+// to identify a borrowed pointer that must not be passed to git_buf_dispose().
+static void GTConsumeBuffer(git_buf *buffer) {
+	if (buffer->reserved > 0) {
+		git_buf_dispose(buffer);
+	}
+
+	*buffer = (git_buf)GIT_BUF_INIT;
+}
+
 @implementation NSData (Git)
 
 + (NSData *)git_dataWithOid:(git_oid *)oid {
@@ -81,18 +94,15 @@ static BOOL GTDataLooksBinary(const void *bytes, NSUInteger length) {
 + (instancetype)git_dataWithBuffer:(git_buf *)buffer {
 	NSCParameterAssert(buffer != NULL);
 
-	if (buffer->size == 0) {
-		git_buf_dispose(buffer);
-		*buffer = (git_buf)GIT_BUF_INIT;
+	if (buffer->ptr == NULL || buffer->size == 0) {
+		GTConsumeBuffer(buffer);
 		return [self data];
 	}
 
-	// Copy the bytes out of the libgit2-owned buffer, then dispose of it using
-	// the current public API and reset it to the empty state. (The historical
-	// `git_buf_grow` + no-copy ownership transfer was removed in libgit2 1.x.)
+	// Copy before consuming the buffer so this works for both libgit2-owned
+	// output and the borrowed view returned by -git_buf.
 	NSData *data = [self dataWithBytes:buffer->ptr length:buffer->size];
-	git_buf_dispose(buffer);
-	*buffer = (git_buf)GIT_BUF_INIT;
+	GTConsumeBuffer(buffer);
 
 	return data;
 }

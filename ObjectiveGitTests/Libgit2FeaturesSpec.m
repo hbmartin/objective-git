@@ -69,13 +69,23 @@ describe(@"version and backends", ^{
 
 describe(@"server timeout", ^{
 	it(@"can set and read the server timeout option", ^{
-		int rc = git_libgit2_opts(GIT_OPT_SET_SERVER_TIMEOUT, (int)5000);
+		int previousTimeout = 0;
+		int rc = git_libgit2_opts(GIT_OPT_GET_SERVER_TIMEOUT, &previousTimeout);
 		expect(@(rc)).to(equal(@(GIT_OK)));
+		if (rc != GIT_OK) return;
 
-		int timeout = 0;
-		rc = git_libgit2_opts(GIT_OPT_GET_SERVER_TIMEOUT, &timeout);
-		expect(@(rc)).to(equal(@(GIT_OK)));
-		expect(@(timeout)).to(equal(@5000));
+		@try {
+			rc = git_libgit2_opts(GIT_OPT_SET_SERVER_TIMEOUT, (int)5000);
+			expect(@(rc)).to(equal(@(GIT_OK)));
+
+			int timeout = 0;
+			rc = git_libgit2_opts(GIT_OPT_GET_SERVER_TIMEOUT, &timeout);
+			expect(@(rc)).to(equal(@(GIT_OK)));
+			expect(@(timeout)).to(equal(@5000));
+		} @finally {
+			int restoreResult = git_libgit2_opts(GIT_OPT_SET_SERVER_TIMEOUT, previousTimeout);
+			expect(@(restoreResult)).to(equal(@(GIT_OK)));
+		}
 	});
 });
 

@@ -28,6 +28,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "git2/types.h"
 #import "git2/oid.h"
 
 @class GTSignature;
@@ -88,4 +89,3 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
-

@@ -22,7 +22,8 @@
 
 /// Returns a read-only libgit2 buffer that will proxy the current bytes of the
 /// receiver. If the length of the receiver changes after this method, the
-/// behavior of the returned buffer is undefined.
+/// behavior of the returned buffer is undefined. The returned buffer borrows
+/// the receiver's storage and must not be passed to `git_buf_dispose`.
 - (git_buf)git_buf;
 
 /// Creates a git_buf from the data and then checks if the buffer contains a NUL

@@ -13,7 +13,11 @@
 
 __attribute__((constructor))
 static void GTSetup(void) {
-	git_libgit2_init();
+	int initResult = git_libgit2_init();
+	if (initResult < 0) {
+		NSLog(@"ObjectiveGit failed to initialize libgit2: %d", initResult);
+		return;
+	}
 
 	int major = 0, minor = 0, rev = 0;
 	git_libgit2_version(&major, &minor, &rev);

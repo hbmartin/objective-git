@@ -6,7 +6,9 @@
 //  Copyright (c) 2013 GitHub, Inc. All rights reserved.
 //
 
-#import "GTCredential.h"
+#import "git2/credential.h"
+
+@class GTCredentialProvider;
 
 // If you need to authenticate an operation in libgit2, you'll have to have
 // a `GTCredentialProvider` handy, like a parameter in the method you're writing,

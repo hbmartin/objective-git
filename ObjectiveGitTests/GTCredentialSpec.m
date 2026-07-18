@@ -13,6 +13,9 @@
 
 #import "QuickSpec+GTFixtures.h"
 
+#import "GTCredential+Private.h"
+#import "git2/errors.h"
+
 QuickSpecBegin(GTCredentialSpec)
 
 describe(@"username / password credentials", ^{
@@ -80,6 +83,25 @@ describe(@"GTCredentialProvider", ^{
 
 		GTCredential *provided = [provider credentialForType:GTCredentialTypeUserPassPlaintext URL:@"https://example.com" userName:@"user"];
 		expect(provided).to(beNil());
+	});
+});
+
+describe(@"GTCredentialAcquireCallback", ^{
+	it(@"rejects a NULL credential output pointer", ^{
+		GTCredentialAcquireCallbackInfo info = { .credProvider = nil };
+
+		int result = GTCredentialAcquireCallback(NULL, NULL, NULL, 0, &info);
+
+		expect(@(result)).to(equal(@(GIT_ERROR)));
+	});
+
+	it(@"clears the credential output before rejecting a NULL payload", ^{
+		git_credential *credential = (git_credential *)0x1;
+
+		int result = GTCredentialAcquireCallback(&credential, NULL, NULL, 0, NULL);
+
+		expect(@(result)).to(equal(@(GIT_ERROR)));
+		expect([NSValue valueWithPointer:credential]).to(equal([NSValue valueWithPointer:NULL]));
 	});
 });
 
