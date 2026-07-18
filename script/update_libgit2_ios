@@ -54,6 +54,7 @@ function build_libgit2 ()
         -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5 \
         "${SYS_ROOT}" \
         -DCMAKE_OSX_ARCHITECTURES:STRING="${ARCH}" \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="${IPHONEOS_DEPLOYMENT_TARGET}" \
         "${ROOT_PATH}/External/libgit2" >> "${LOG}" 2>&1
     cmake --build . --target install >> "${LOG}" 2>&1
     popd > /dev/null

@@ -18,21 +18,27 @@ function setup ()
 
 function build_ssh2 ()
 {
-    echo "cp -R ${ROOT_PATH}/External/libssh2 ${ARCH_INSTALL_PATH}/libssh2"
-
-    cp -R "${ROOT_PATH}/External/libssh2" "${ARCH_INSTALL_PATH}/libssh2"
+    rm -rf "${ARCH_INSTALL_PATH}/libssh2"
+    mkdir -p "${ARCH_INSTALL_PATH}/libssh2"
     pushd "${ARCH_INSTALL_PATH}/libssh2" > /dev/null
 
-    export CFLAGS="-arch ${ARCH} -fembed-bitcode -pipe -no-cpp-precomp -isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
-    export CPPFLAGS="-arch ${ARCH} -fembed-bitcode -pipe -no-cpp-precomp -isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
-
-    ./buildconf | tee "${LOG}" 2>&1
-    ./configure --host=${HOST} --prefix="${ARCH_INSTALL_PATH}" --with-openssl --with-libssl-prefix="${INSTALL_PATH}" --disable-shared --enable-static >> "${LOG}" 2>&1
-    make >> "${LOG}" 2>&1
-    make install >> "${LOG}" 2>&1
+    cmake \
+        -DBUILD_SHARED_LIBS:BOOL=OFF \
+        -DBUILD_EXAMPLES:BOOL=OFF \
+        -DBUILD_TESTING:BOOL=OFF \
+        -DCRYPTO_BACKEND:STRING=OpenSSL \
+        -DOPENSSL_ROOT_DIR:PATH="${INSTALL_PATH}" \
+        -DOPENSSL_INCLUDE_DIR:PATH="${INSTALL_PATH}/include" \
+        -DOPENSSL_CRYPTO_LIBRARY:FILEPATH="${INSTALL_PATH}/lib/libcrypto.a" \
+        -DOPENSSL_SSL_LIBRARY:FILEPATH="${INSTALL_PATH}/lib/libssl.a" \
+        -DCMAKE_INSTALL_PREFIX:PATH="${ARCH_INSTALL_PATH}" \
+        -DCMAKE_OSX_ARCHITECTURES:STRING="${ARCH}" \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="${IPHONEOS_DEPLOYMENT_TARGET}" \
+        -DCMAKE_OSX_SYSROOT:PATH="${SDKROOT}" \
+        -DCMAKE_POLICY_VERSION_MINIMUM:STRING=3.5 \
+        "${ROOT_PATH}/External/libssh2" >> "${LOG}" 2>&1
+    cmake --build . --target install >> "${LOG}" 2>&1
     popd > /dev/null
-
-    rm -rf "${ARCH_INSTALL_PATH}/libssh2"
 
     BUILT_LIBS+=("${ARCH_INSTALL_PATH}/lib/libssh2.a")
 }

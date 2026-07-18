@@ -21,31 +21,18 @@ function setup_build_environment ()
     # We need to clear this so that cmake doesn't have a conniption
     MACOSX_DEPLOYMENT_TARGET=""
 
-    XCODE_MAJOR_VERSION=$(xcode_major_version)
-
-    CAN_BUILD_64BIT="0"
-
     # If IPHONEOS_DEPLOYMENT_TARGET has not been specified
     # setup reasonable defaults to allow running of a build script
     # directly (ie not from an Xcode proj)
     if [ -z "${IPHONEOS_DEPLOYMENT_TARGET}" ]
     then
-        IPHONEOS_DEPLOYMENT_TARGET="6.0"
+        IPHONEOS_DEPLOYMENT_TARGET="12.0"
     fi
 
-    # Determine if we can be building 64-bit binaries
-    if [ "${XCODE_MAJOR_VERSION}" -ge "5" ] && [ $(echo ${IPHONEOS_DEPLOYMENT_TARGET} '>=' 6.0 | bc -l) == "1" ]
-    then
-        CAN_BUILD_64BIT="1"
-    fi
-
-    ARCHS="i386 armv7 armv7s"
-    if [ "${CAN_BUILD_64BIT}" -eq "1" ]
-    then
-        # For some stupid reason cmake needs simulator
-        # builds to be first
-        ARCHS="x86_64 ${ARCHS} arm64"
-    fi
+    # A legacy universal archive can contain only one slice per CPU
+    # architecture, so it cannot combine arm64 device and simulator slices.
+    # Keep an Intel simulator slice alongside the modern arm64 device slice.
+    IOS_ARCHS="${IOS_ARCHS:-x86_64 arm64}"
 
     # Setup a shared area for our build artifacts
     INSTALL_PATH="${ROOT_PATH}/External/build"
@@ -66,11 +53,11 @@ function build_all_archs ()
     # run the prepare function
     eval $setup
 
-    echo "Building for ${ARCHS}"
+    echo "Building for ${IOS_ARCHS}"
 
-    for ARCH in ${ARCHS}
+    for ARCH in ${IOS_ARCHS}
     do
-        if [ "${ARCH}" == "i386" ] || [ "${ARCH}" == "x86_64" ]
+        if [ "${ARCH}" == "x86_64" ]
         then
             PLATFORM="iphonesimulator"
         else
@@ -78,13 +65,6 @@ function build_all_archs ()
         fi
 
         SDKVERSION=$(ios_sdk_version)
-
-        if [ "${ARCH}" == "arm64" ]
-        then
-            HOST="aarch64-apple-darwin"
-        else
-            HOST="${ARCH}-apple-darwin"
-        fi
 
         SDKNAME="${PLATFORM}${SDKVERSION}"
         SDKROOT="$(ios_sdk_path ${SDKNAME})"
@@ -106,4 +86,3 @@ function build_all_archs ()
     # finish the build (usually lipo)
     eval $finish_build
 }
-
