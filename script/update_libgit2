@@ -79,7 +79,7 @@ compute_fingerprint() {
     echo "cmake=$(cmake --version 2>/dev/null | head -1)"
     echo "cc=$(${CC:-cc} --version 2>/dev/null | head -1)"
     echo "sources:"
-    find src include deps CMakeLists.txt -type f 2>/dev/null | LC_ALL=C sort | while IFS= read -r f; do
+    find src include deps cmake CMakeLists.txt -type f 2>/dev/null | LC_ALL=C sort | while IFS= read -r f; do
       echo "$(_mtime "$f") $f"
     done
   } | _sha | awk '{print $1}'
