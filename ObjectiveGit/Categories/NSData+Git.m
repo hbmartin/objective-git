@@ -13,6 +13,8 @@
 // which was removed from the public API in libgit2 1.x. Reimplemented here with
 // direct byte operations so that `-git_isBinary` keeps its previous behavior.
 static BOOL GTDataLooksBinary(const void *bytes, NSUInteger length) {
+	if (bytes == NULL || length == 0) return NO;
+
 	const unsigned char *scan = bytes;
 	const unsigned char *end = scan + length;
 	int printable = 0, nonprintable = 0;
@@ -81,7 +83,7 @@ static BOOL GTDataLooksBinary(const void *bytes, NSUInteger length) {
 + (instancetype)git_dataWithBuffer:(git_buf *)buffer {
 	NSCParameterAssert(buffer != NULL);
 
-	if (buffer->size == 0) {
+	if (buffer->ptr == NULL || buffer->size == 0) {
 		git_buf_dispose(buffer);
 		*buffer = (git_buf)GIT_BUF_INIT;
 		return [self data];

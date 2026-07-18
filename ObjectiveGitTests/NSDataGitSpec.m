@@ -52,6 +52,17 @@ describe(@"+git_dataWithBuffer:", ^{
 		expect(@(buffer.size)).to(equal(@0));
 		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
 	});
+
+	it(@"should safely consume a malformed buffer with a NULL pointer", ^{
+		git_buf_free(&buffer);
+		buffer = (git_buf)GIT_BUF_INIT_CONST(NULL, 1);
+
+		NSData *data = [NSData git_dataWithBuffer:&buffer];
+
+		expect(data).to(equal([NSData data]));
+		expect(@(buffer.size)).to(equal(@0));
+		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
+	});
 });
 
 describe(@"git_buf", ^{

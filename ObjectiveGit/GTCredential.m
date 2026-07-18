@@ -99,12 +99,19 @@ typedef GTCredential *(^GTCredentialProviderBlock)(GTCredentialType allowedTypes
 @end
 
 int GTCredentialAcquireCallback(git_credential **git_cred, const char *url, const char *username_from_url, unsigned int allowed_types, void *payload) {
-	NSCParameterAssert(git_cred != NULL);
-	NSCParameterAssert(payload != NULL);
+	if (git_cred == NULL) {
+		git_error_set_str(GIT_EUSER, "No credential output pointer provided.");
+		return GIT_ERROR;
+	}
 
 	// Ensure the output is cleared before any early/failure return so libgit2
 	// never observes an uninitialized credential pointer.
 	*git_cred = NULL;
+
+	if (payload == NULL) {
+		git_error_set_str(GIT_EUSER, "No credential provider payload provided.");
+		return GIT_ERROR;
+	}
 
 	GTCredentialAcquireCallbackInfo *info = payload;
 	GTCredentialProvider *provider = info->credProvider;
