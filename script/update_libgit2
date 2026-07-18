@@ -2,41 +2,113 @@
 
 set -e
 
-cd "External/libgit2"
+# Resolve the absolute path to this script before changing directories so it can
+# be folded into the build fingerprint below.
+SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 
+cd "External/libgit2"
+LIBGIT2_DIR="$(pwd)"
+EXTERNAL_DIR="$(cd "$LIBGIT2_DIR/.." && pwd)"
+
+# --- Explicit production build configuration ---------------------------------
+#
+# GitX's supported build contract is a static, arm64-only, macOS 13+ libgit2
+# built with pthreads, SecureTransport HTTPS and libssh2 SSH. Everything is
+# specified explicitly; the obsolete `BUILD_CLAR` / `THREADSAFE` options are
+# gone (replaced by `BUILD_TESTS` / `USE_THREADS`).
+LIBGIT2_ARCH="arm64"
+LIBGIT2_DEPLOYMENT_TARGET="13.0"
+
+CMAKE_ARGS="-DBUILD_SHARED_LIBS=OFF \
+-DBUILD_TESTS=OFF \
+-DBUILD_CLI=OFF \
+-DBUILD_EXAMPLES=OFF \
+-DUSE_THREADS=ON \
+-DUSE_SSH=libssh2 \
+-DUSE_HTTPS=SecureTransport \
+-DCMAKE_OSX_ARCHITECTURES=${LIBGIT2_ARCH} \
+-DCMAKE_OSX_DEPLOYMENT_TARGET=${LIBGIT2_DEPLOYMENT_TARGET} \
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+
+product="libgit2.a"
+install_path="${EXTERNAL_DIR}/${product}"
+stamp_path="${EXTERNAL_DIR}/.libgit2-build.stamp"
+
+# OpenSSL is keg-only, so add its pkgconfig location manually.
+if [ "$(uname -m)" = "arm64" ]; then
+  echo "Running on Apple Silicon"
+  ARCH_PREFIX=/opt/homebrew
+else
+  echo "Running on Apple x86"
+  ARCH_PREFIX=/usr/local
+fi
+export PKG_CONFIG_PATH="$ARCH_PREFIX/opt/openssl/lib/pkgconfig:$ARCH_PREFIX/lib/pkgconfig"
+
+# augment path to help it find cmake installed in /usr/local/bin or
+# /opt/homebrew/bin, e.g. via brew. Xcode's Run Script phase doesn't seem to
+# honor ~/.MacOSX/environment.plist
+PATH="$ARCH_PREFIX/bin:$PATH"
+export PATH
+
+# --- Build cache fingerprint -------------------------------------------------
+#
+# Rebuild only when something that affects the produced artifact changes: the
+# pinned libgit2 commit, this build script, the CMake arguments, the target
+# architecture / deployment target, the CMake and compiler versions, and the
+# timestamps of the libgit2 sources themselves. An unchanged second invocation
+# is a no-op; anything that alters the inputs forces a cold rebuild.
+_sha() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum
+  else
+    sha1sum
+  fi
+}
+
+_mtime() {
+  stat -f '%m' "$1" 2>/dev/null || stat -c '%Y' "$1" 2>/dev/null
+}
+
+compute_fingerprint() {
+  {
+    echo "commit=$(git rev-parse HEAD 2>/dev/null || echo none)"
+    echo "script=$(_sha < "$SCRIPT_PATH" | awk '{print $1}')"
+    echo "args=${CMAKE_ARGS}"
+    echo "arch=${LIBGIT2_ARCH}"
+    echo "deployment=${LIBGIT2_DEPLOYMENT_TARGET}"
+    echo "cmake=$(cmake --version 2>/dev/null | head -1)"
+    echo "cc=$(${CC:-cc} --version 2>/dev/null | head -1)"
+    echo "sources:"
+    find src include deps CMakeLists.txt -type f 2>/dev/null | LC_ALL=C sort | while IFS= read -r f; do
+      echo "$(_mtime "$f") $f"
+    done
+  } | _sha | awk '{print $1}'
+}
+
+current_fingerprint="$(compute_fingerprint)"
+
+if [ -f "$install_path" ] && [ -f "$stamp_path" ] && [ "$(cat "$stamp_path")" = "$current_fingerprint" ]; then
+  echo "libgit2.a is up to date (build fingerprint unchanged); skipping rebuild."
+  exit 0
+fi
+
+# --- Cold / changed build ----------------------------------------------------
 if [ -d "build" ]; then
   rm -rf "build"
 fi
-
 mkdir build
 cd build
 
-# OpenSSL is keg-only, so add its pkgconfig location manually
-if [[ $(uname -m) == 'arm64' ]]; then
-  echo "Running on a Apple Silicon M1"
-  export ARCH_PREFIX=/opt/homebrew
-else
-  echo "Running on a Apple x86"
-  export ARCH_PREFIX=/usr/local
-fi
-export PKG_CONFIG_PATH=$ARCH_PREFIX/opt/openssl/lib/pkgconfig:$ARCH_PREFIX/lib/pkgconfig
-
-# augment path to help it find cmake installed in /usr/local/bin,
-# e.g. via brew. Xcode's Run Script phase doesn't seem to honor
-# ~/.MacOSX/environment.plist
-PATH="$ARCH_PREFIX/bin:$PATH"
-
 cmake --version
-cmake -DBUILD_SHARED_LIBS:BOOL=OFF \
-  -DBUILD_CLAR:BOOL=OFF \
-  -DTHREADSAFE:BOOL=ON \
-  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-  ..
+# shellcheck disable=SC2086 # intentional word splitting of the argument list
+cmake ${CMAKE_ARGS} ..
 cmake --build .
 
-product="libgit2.a"
-install_path="../../${product}"
-rm -rf $install_path
-cp -v "${product}" "${install_path}"
+rm -rf "$install_path"
+cp -v "${product}" "$install_path"
+
+# Record the fingerprint of this successful build so the next invocation with
+# identical inputs is a no-op.
+echo "${current_fingerprint}" > "$stamp_path"
 
 echo "libgit2 has been updated."

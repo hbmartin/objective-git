@@ -65,7 +65,7 @@
 }
 
 - (NSString *)stringForKey:(NSString *)key {
-	git_buf buffer = {};
+	git_buf buffer = GIT_BUF_INIT;
 	if (git_config_get_string_buf(&buffer, self.git_config, key.UTF8String) != 0) return nil;
 
 	return [[NSString alloc] initWithData:[NSData git_dataWithBuffer:&buffer] encoding:NSUTF8StringEncoding];

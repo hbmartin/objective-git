@@ -135,6 +135,22 @@ describe(@"application", ^{
 		expect(ODBObject.data).to(equal(replacementData));
 	});
 
+	it(@"should preserve binary (NUL-containing) data returned by the apply block", ^{
+		const char bytes[] = { 'b', 'i', 'n', 0x00, 0x01, 0x02, 'x' };
+		NSData *replacementData = [NSData dataWithBytes:bytes length:sizeof(bytes)];
+		setUpFilterWithApplyBlock(^(void **payload, NSData *from, GTFilterSource *source, BOOL *applied) {
+			return replacementData;
+		});
+
+		addTestFileToIndex();
+
+		GTIndex *index = [repository indexWithError:NULL];
+		GTTree *tree = [index writeTree:NULL];
+		GTTreeEntry *entry = [tree entryWithName:testFile];
+		GTOdbObject *ODBObject = [[entry GTObject:NULL] odbObjectWithError:NULL];
+		expect(ODBObject.data).to(equal(replacementData));
+	});
+
 	it(@"should write the data returned by the apply block when smudged", ^{
 		addTestFileToIndex();
 		GTIndex *index = [repository indexWithError:NULL];

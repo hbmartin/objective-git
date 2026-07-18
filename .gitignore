@@ -11,6 +11,7 @@ ObjectiveGitFramework/build/*
 ObjectiveGit-iOS.framework/*
 External/*.a
 External/*.dylib
+External/.libgit2-build.stamp
 
 *.pbxuser
 *.perspective

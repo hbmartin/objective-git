@@ -675,7 +675,7 @@ static int GTRepositoryForeachTagCallback(const char *name, git_oid *oid, void *
 		}
 	};
 
-	git_buf msg = { NULL };
+	git_buf msg = GIT_BUF_INIT;
 	int errorCode = git_repository_message(&msg, self.git_repository);
 	if (errorCode != GIT_OK) {
 		setErrorFromCode(errorCode);

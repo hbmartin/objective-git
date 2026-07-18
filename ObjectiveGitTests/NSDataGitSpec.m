@@ -12,6 +12,11 @@
 
 #import "QuickSpec+GTFixtures.h"
 
+// This spec constructs libgit2 buffers directly to exercise `+git_dataWithBuffer:`.
+// `git_buf_set` / `git_buf_free` / `GIT_BUF_INIT_CONST` moved to the deprecated
+// header in libgit2 1.x; import it narrowly here to build test fixtures.
+#import "git2/deprecated.h"
+
 QuickSpecBegin(NSDataGit)
 
 const void *testData = "hello world";
@@ -27,7 +32,6 @@ describe(@"+git_dataWithBuffer:", ^{
 		expect([NSValue valueWithPointer:buffer.ptr]).notTo(equal([NSValue valueWithPointer:NULL]));
 		expect([NSValue valueWithPointer:buffer.ptr]).notTo(equal([NSValue valueWithPointer:testData]));
 		expect(@(buffer.size)).to(equal(@(testDataSize)));
-		expect(@(buffer.asize)).to(beGreaterThanOrEqualTo(@(testDataSize)));
 	});
 
 	afterEach(^{
@@ -46,7 +50,6 @@ describe(@"+git_dataWithBuffer:", ^{
 		[NSData git_dataWithBuffer:&buffer];
 
 		expect(@(buffer.size)).to(equal(@0));
-		expect(@(buffer.asize)).to(equal(@0));
 		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
 	});
 });
@@ -63,7 +66,6 @@ describe(@"git_buf", ^{
 		git_buf buffer = data.git_buf;
 		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:data.bytes]));
 		expect(@(buffer.size)).to(equal(@(data.length)));
-		expect(@(buffer.asize)).to(equal(@0));
 	});
 });
 

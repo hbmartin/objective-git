@@ -136,8 +136,11 @@
 - (NSData *)applyFiltersForPath:(NSString *)path error:(NSError **)error {
 	NSCParameterAssert(path != nil);
 
-	git_buf buffer = GIT_BUF_INIT_CONST(0, NULL);
-	int gitError = git_blob_filtered_content(&buffer, self.git_blob, path.UTF8String, 1);
+	git_buf buffer = GIT_BUF_INIT;
+	// `git_blob_filtered_content(..., check_for_binary_data=1)` was deprecated in
+	// favor of `git_blob_filter`; the default options include
+	// `GIT_BLOB_FILTER_CHECK_FOR_BINARY`, matching the previous behavior.
+	int gitError = git_blob_filter(&buffer, self.git_blob, path.UTF8String, NULL);
 	if (gitError != GIT_OK) {
 		if (error != NULL) *error = [NSError git_errorFor:gitError description:@"Failed to apply filters for path %@ to blob", path];
 		return nil;

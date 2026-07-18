@@ -43,4 +43,40 @@ describe(@"libgit", ^{
 	});
 });
 
+describe(@"version and backends", ^{
+	it(@"reports libgit2 1.9.4", ^{
+		int major = 0, minor = 0, rev = 0;
+		git_libgit2_version(&major, &minor, &rev);
+		expect(@(major)).to(equal(@1));
+		expect(@(minor)).to(equal(@9));
+		expect(@(rev)).to(equal(@4));
+	});
+
+	it(@"uses the pthread threads backend", ^{
+		expect(@(git_libgit2_feature_backend(GIT_FEATURE_THREADS))).to(equal(@"pthread"));
+	});
+
+	it(@"uses the SecureTransport HTTPS backend", ^{
+		expect(@(git_libgit2_feature_backend(GIT_FEATURE_HTTPS))).to(equal(@"securetransport"));
+	});
+
+	it(@"uses the libssh2 SSH backend and not the exec/OpenSSH backend", ^{
+		NSString *backend = @(git_libgit2_feature_backend(GIT_FEATURE_SSH));
+		expect(backend).to(equal(@"libssh2"));
+		expect(backend).notTo(equal(@"exec"));
+	});
+});
+
+describe(@"server timeout", ^{
+	it(@"can set and read the server timeout option", ^{
+		int rc = git_libgit2_opts(GIT_OPT_SET_SERVER_TIMEOUT, (int)5000);
+		expect(@(rc)).to(equal(@(GIT_OK)));
+
+		int timeout = 0;
+		rc = git_libgit2_opts(GIT_OPT_GET_SERVER_TIMEOUT, &timeout);
+		expect(@(rc)).to(equal(@(GIT_OK)));
+		expect(@(timeout)).to(equal(@5000));
+	});
+});
+
 QuickSpecEnd
