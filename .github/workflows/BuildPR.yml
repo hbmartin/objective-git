@@ -15,9 +15,6 @@ jobs:
       matrix:
         include:
           - xcode: 26.3
-            os: macos-15-intel
-            abi: x86_64
-          - xcode: 26.3
             os: macos-26
             abi: arm64
     steps:
@@ -47,7 +44,30 @@ jobs:
       - name: Unlink openssl 3
         run: |
           brew unlink openssl@3
-#      - name: Test project
-#        run: xcodebuild -workspace ObjectiveGitFramework.xcworkspace -scheme "ObjectiveGit Mac" test ARCHS="${{ matrix.arch }}"
+      - name: Test project
+        run: |
+          xcodebuild -workspace ObjectiveGitFramework.xcworkspace \
+            -scheme "ObjectiveGit Mac" \
+            test ARCHS="${{ matrix.abi }}"
+      - name: Test credential & security cases under ASan/UBSan
+        run: |
+          xcodebuild -workspace ObjectiveGitFramework.xcworkspace \
+            -scheme "ObjectiveGit Mac" \
+            -enableAddressSanitizer YES \
+            -enableUndefinedBehaviorSanitizer YES \
+            -only-testing:ObjectiveGit-MacTests/GTCredentialSpec \
+            -only-testing:ObjectiveGit-MacTests/GTCredentialSecuritySpec \
+            test ARCHS="${{ matrix.abi }}"
+      - name: Test credential & security cases under ThreadSanitizer
+        run: |
+          xcodebuild -workspace ObjectiveGitFramework.xcworkspace \
+            -scheme "ObjectiveGit Mac" \
+            -enableThreadSanitizer YES \
+            -only-testing:ObjectiveGit-MacTests/GTCredentialSpec \
+            -only-testing:ObjectiveGit-MacTests/GTCredentialSecuritySpec \
+            test ARCHS="${{ matrix.abi }}"
       - name: Archive project
-        run: xcodebuild -workspace ObjectiveGitFramework.xcworkspace -scheme "ObjectiveGit Mac" archive ARCHS="${{ matrix.arch }}"
+        run: |
+          xcodebuild -workspace ObjectiveGitFramework.xcworkspace \
+            -scheme "ObjectiveGit Mac" \
+            archive ARCHS="${{ matrix.abi }}"

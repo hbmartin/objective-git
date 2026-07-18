@@ -90,6 +90,7 @@
 		30FDC07F16835A8100654BF0 /* GTDiffLine.h in Headers */ = {isa = PBXBuildFile; fileRef = 30FDC07D16835A8100654BF0 /* GTDiffLine.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		30FDC08116835A8100654BF0 /* GTDiffLine.m in Sources */ = {isa = PBXBuildFile; fileRef = 30FDC07E16835A8100654BF0 /* GTDiffLine.m */; };
 		35630A586056E63744A57CA9 /* GTCredentialSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = 8037472E1934B3F1EF0F7317 /* GTCredentialSpec.m */; };
+		3BF8F58220C689756B5DF1C4 /* GTCredentialSecuritySpec.m in Sources */ = {isa = PBXBuildFile; fileRef = CA369E3E3B4FD60CEA378745 /* GTCredentialSecuritySpec.m */; };
 		4D123240178E009E0048F785 /* GTRepositoryCommittingSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D12323F178E009E0048F785 /* GTRepositoryCommittingSpec.m */; };
 		4D1C40D8182C006D00BE2960 /* GTBlobSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D1C40D7182C006D00BE2960 /* GTBlobSpec.m */; };
 		4D79C0EE17DF9F4D00997DE4 /* GTCredential.h in Headers */ = {isa = PBXBuildFile; fileRef = 4D79C0EC17DF9F4D00997DE4 /* GTCredential.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -383,6 +384,7 @@
 		F964D5F31CE9D9B200F1D8DD /* GTNote.m in Sources */ = {isa = PBXBuildFile; fileRef = F964D5F01CE9D9B200F1D8DD /* GTNote.m */; };
 		F964D5F51CE9D9B200F1D8DD /* GTNote.m in Sources */ = {isa = PBXBuildFile; fileRef = F964D5F01CE9D9B200F1D8DD /* GTNote.m */; };
 		F9D1D4251CEB7BA6009E5855 /* GTNoteSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = F9D1D4221CEB79D1009E5855 /* GTNoteSpec.m */; };
+		FFD492D9EB881B063802E0EF /* GTCredentialSecuritySpec.m in Sources */ = {isa = PBXBuildFile; fileRef = CA369E3E3B4FD60CEA378745 /* GTCredentialSecuritySpec.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -597,6 +599,7 @@
 		BDFAF9C2131C1845000508BC /* GTIndex.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GTIndex.m; sourceTree = "<group>"; };
 		BDFAF9C7131C1868000508BC /* GTIndexEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GTIndexEntry.h; sourceTree = "<group>"; };
 		BDFAF9C8131C1868000508BC /* GTIndexEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = GTIndexEntry.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
+		CA369E3E3B4FD60CEA378745 /* GTCredentialSecuritySpec.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = GTCredentialSecuritySpec.m; sourceTree = "<group>"; };
 		D00F6815175D373C004DB9D6 /* GTReferenceSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GTReferenceSpec.m; sourceTree = "<group>"; };
 		D015F7C817F695E800AD5E1F /* GTRepository+Stashing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "GTRepository+Stashing.h"; sourceTree = "<group>"; };
 		D015F7C917F695E800AD5E1F /* GTRepository+Stashing.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "GTRepository+Stashing.m"; sourceTree = "<group>"; };
@@ -870,6 +873,7 @@
 				88F05A7616011E5400B7AD1D /* Supporting Files */,
 				8037472E1934B3F1EF0F7317 /* GTCredentialSpec.m */,
 				4BD14D4BBFA95449D4EA980A /* NSDataGitBufferSpec.m */,
+				CA369E3E3B4FD60CEA378745 /* GTCredentialSecuritySpec.m */,
 			);
 			path = ObjectiveGitTests;
 			sourceTree = "<group>";
@@ -1468,6 +1472,7 @@
 				4D123240178E009E0048F785 /* GTRepositoryCommittingSpec.m in Sources */,
 				6D4D798207E34755D925A001 /* GTCredentialSpec.m in Sources */,
 				1BDF0C715850EEDBAB8ED41D /* NSDataGitBufferSpec.m in Sources */,
+				3BF8F58220C689756B5DF1C4 /* GTCredentialSecuritySpec.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1639,6 +1644,7 @@
 				F8D007A51B4FA03B009A8DAF /* GTDiffDeltaSpec.m in Sources */,
 				35630A586056E63744A57CA9 /* GTCredentialSpec.m in Sources */,
 				2F06CF0B4824A4892E71428C /* NSDataGitBufferSpec.m in Sources */,
+				FFD492D9EB881B063802E0EF /* GTCredentialSecuritySpec.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

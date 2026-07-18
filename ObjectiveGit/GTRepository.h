@@ -56,6 +56,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// `GIT_TRANSPORTFLAGS_NONE` was removed from libgit2's public headers; the
+// "none" value has always been zero, so define it locally for compatibility.
+#ifndef GIT_TRANSPORTFLAGS_NONE
+#define GIT_TRANSPORTFLAGS_NONE 0
+#endif
+
 /// Transport flags sent as options to +cloneFromURL... method
 typedef NS_OPTIONS(NSInteger, GTTransportFlags) {
 	GTTransportFlagsNone = GIT_TRANSPORTFLAGS_NONE

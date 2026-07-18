@@ -13,6 +13,11 @@
 
 #import "git2/errors.h"
 #import "git2/sys/filter.h"
+// This custom-filter implementation intentionally uses libgit2's legacy
+// `git_buf`-based apply callback (`_filter.apply` / `git_buf_set`), which lives
+// behind the deprecated header. Import it narrowly here rather than forcing the
+// deprecated API on the rest of ObjectiveGit.
+#import "git2/deprecated.h"
 
 NSString * const GTFilterErrorDomain = @"GTFilterErrorDomain";
 
