@@ -88,6 +88,10 @@ describe(@"transformations", ^{
 });
 
 describe(@"valid names",^{
+	it(@"should reject nil names", ^{
+		expect(@([GTReference isValidReferenceName:nil])).to(beFalsy());
+	});
+
 	it(@"should accept uppercase top-level names", ^{
 		expect(@([GTReference isValidReferenceName:@"HEAD"])).to(beTruthy());
 		expect(@([GTReference isValidReferenceName:@"ORIG_HEAD"])).to(beTruthy());

@@ -100,7 +100,7 @@ typedef GTCredential *(^GTCredentialProviderBlock)(GTCredentialType allowedTypes
 
 int GTCredentialAcquireCallback(git_credential **git_cred, const char *url, const char *username_from_url, unsigned int allowed_types, void *payload) {
 	if (git_cred == NULL) {
-		git_error_set_str(GIT_EUSER, "No credential output pointer provided.");
+		git_error_set_str(GIT_ERROR_INVALID, "No credential output pointer provided.");
 		return GIT_ERROR;
 	}
 
@@ -109,7 +109,7 @@ int GTCredentialAcquireCallback(git_credential **git_cred, const char *url, cons
 	*git_cred = NULL;
 
 	if (payload == NULL) {
-		git_error_set_str(GIT_EUSER, "No credential provider payload provided.");
+		git_error_set_str(GIT_ERROR_INVALID, "No credential provider payload provided.");
 		return GIT_ERROR;
 	}
 
@@ -117,7 +117,7 @@ int GTCredentialAcquireCallback(git_credential **git_cred, const char *url, cons
 	GTCredentialProvider *provider = info->credProvider;
 
 	if (provider == nil) {
-		git_error_set_str(GIT_EUSER, "No GTCredentialProvider set, but authentication was requested.");
+		git_error_set_str(GIT_ERROR_CALLBACK, "No GTCredentialProvider set, but authentication was requested.");
 		return GIT_ERROR;
 	}
 
@@ -126,7 +126,7 @@ int GTCredentialAcquireCallback(git_credential **git_cred, const char *url, cons
 
 	GTCredential *cred = [provider credentialForType:(GTCredentialType)allowed_types URL:URL userName:userName];
 	if (cred == nil) {
-		git_error_set_str(GIT_EUSER, "GTCredentialProvider failed to provide credentials.");
+		git_error_set_str(GIT_ERROR_CALLBACK, "GTCredentialProvider failed to provide credentials.");
 		return GIT_ERROR;
 	}
 

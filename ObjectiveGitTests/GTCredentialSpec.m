@@ -93,6 +93,7 @@ describe(@"GTCredentialAcquireCallback", ^{
 		int result = GTCredentialAcquireCallback(NULL, NULL, NULL, 0, &info);
 
 		expect(@(result)).to(equal(@(GIT_ERROR)));
+		expect(@(git_error_last()->klass)).to(equal(@(GIT_ERROR_INVALID)));
 	});
 
 	it(@"clears the credential output before rejecting a NULL payload", ^{
@@ -102,6 +103,32 @@ describe(@"GTCredentialAcquireCallback", ^{
 
 		expect(@(result)).to(equal(@(GIT_ERROR)));
 		expect([NSValue valueWithPointer:credential]).to(equal([NSValue valueWithPointer:NULL]));
+		expect(@(git_error_last()->klass)).to(equal(@(GIT_ERROR_INVALID)));
+	});
+
+	it(@"reports a missing credential provider as a callback error", ^{
+		git_credential *credential = (git_credential *)0x1;
+		GTCredentialAcquireCallbackInfo info = { .credProvider = nil };
+
+		int result = GTCredentialAcquireCallback(&credential, NULL, NULL, 0, &info);
+
+		expect(@(result)).to(equal(@(GIT_ERROR)));
+		expect([NSValue valueWithPointer:credential]).to(equal([NSValue valueWithPointer:NULL]));
+		expect(@(git_error_last()->klass)).to(equal(@(GIT_ERROR_CALLBACK)));
+	});
+
+	it(@"reports a provider that declines credentials as a callback error", ^{
+		GTCredentialProvider *provider = [GTCredentialProvider providerWithBlock:^GTCredential *(GTCredentialType type, NSString *URL, NSString *userName) {
+			return nil;
+		}];
+		GTCredentialAcquireCallbackInfo info = { .credProvider = provider };
+		git_credential *credential = (git_credential *)0x1;
+
+		int result = GTCredentialAcquireCallback(&credential, NULL, NULL, 0, &info);
+
+		expect(@(result)).to(equal(@(GIT_ERROR)));
+		expect([NSValue valueWithPointer:credential]).to(equal([NSValue valueWithPointer:NULL]));
+		expect(@(git_error_last()->klass)).to(equal(@(GIT_ERROR_CALLBACK)));
 	});
 });
 

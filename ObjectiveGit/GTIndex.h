@@ -203,13 +203,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// error - Optionally set in the event of failure.
 /// block - A block to be run on each conflicted entry. Passed in are index
 ///         entries which represent the common ancestor as well as our and their
-///         side of the conflict. If the block sets `stop` to YES then the
-///         iteration will cease once the current block execution has finished.
-///         Must not be nil.
+///         side of the conflict. Any entry can be nil when that side does not
+///         contain the conflicted path. If the block sets `stop` to YES then
+///         the iteration will cease once the current block execution has
+///         finished. Must not be nil.
 ///
 /// Returns `YES` in the event of successful enumeration or no conflicts in the
 /// index, `NO` in case of error.
-- (BOOL)enumerateConflictedFilesWithError:(NSError **)error usingBlock:(void (^)(GTIndexEntry *ancestor, GTIndexEntry *ours, GTIndexEntry *theirs, BOOL *stop))block;
+- (BOOL)enumerateConflictedFilesWithError:(NSError **)error usingBlock:(void (^)(GTIndexEntry * _Nullable ancestor, GTIndexEntry * _Nullable ours, GTIndexEntry * _Nullable theirs, BOOL *stop))block;
 
 /// Update all index entries to match the working directory.
 /// This method will immediately fail if the index's repo is bare.
