@@ -34,7 +34,9 @@ static void GTSetup(void) {
 	git_libgit2_version(&major, &minor, &rev);
 
 	int features = git_libgit2_features();
-	os_log_debug(GTLog(), "ObjectiveGit initialized libgit2 %d.%d.%d (threads: %d, https: %d, ssh: %d)",
+	// Default-level so the version/features line survives in the unified log
+	// for support diagnostics; debug-level messages are discarded by default.
+	os_log(GTLog(), "ObjectiveGit initialized libgit2 %d.%d.%d (threads: %d, https: %d, ssh: %d)",
 		major, minor, rev,
 		(features & GIT_FEATURE_THREADS) != 0,
 		(features & GIT_FEATURE_HTTPS) != 0,

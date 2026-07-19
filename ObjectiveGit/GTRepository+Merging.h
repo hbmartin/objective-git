@@ -56,6 +56,7 @@ typedef NS_OPTIONS(NSInteger, GTMergeAnalysis) {
 /// Gets the file content with conflict markers for the given file
 ///
 /// The parameters taked are the ones received from `enumerateConflictedFiles`.
+/// At least one of `ancestor`, `ourSide` and `theirSide` must be non-nil.
 ///
 /// ancestor - The ancestor entry, or nil when no common ancestor exists.
 /// ours     - The index entry of our side, or nil when it was deleted.

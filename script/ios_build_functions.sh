@@ -32,6 +32,10 @@ function setup_build_environment ()
     # Each slice is a "<platform>:<arch>" pair. An XCFramework can carry a
     # device arm64 slice and a simulator arm64 slice side by side (a lipo'd
     # fat archive could not hold two slices of the same architecture).
+    if [ -n "${IOS_ARCHS:-}" ]
+    then
+        echo "warning: IOS_ARCHS is no longer used; set IOS_SLICES instead (e.g. \"iphoneos:arm64 iphonesimulator:arm64\")." >&2
+    fi
     IOS_SLICES="${IOS_SLICES:-iphoneos:arm64 iphonesimulator:arm64}"
 
     # Setup a shared area for our build artifacts
@@ -93,6 +97,33 @@ function build_all_slices ()
 
     # finish the build (create the xcframework)
     eval $finish_build
+}
+
+# slice_libraries_exist <library> [<library> ...]
+# Succeeds when every named static library exists in every slice's install
+# prefix. Later build scripts link against these per-slice libraries (libgit2
+# links libssh2, which links OpenSSL), so an existing xcframework alone is not
+# proof that a rebuild can be skipped.
+function slice_libraries_exist ()
+{
+    local sdkversion slice platform arch library
+    sdkversion=$(ios_sdk_version)
+
+    for slice in ${IOS_SLICES}
+    do
+        platform="${slice%%:*}"
+        arch="${slice#*:}"
+
+        for library in "$@"
+        do
+            if [ ! -f "${INSTALL_PATH}/${platform}${sdkversion}-${arch}.sdk/lib/${library}" ]
+            then
+                return 1
+            fi
+        done
+    done
+
+    return 0
 }
 
 # create_xcframework <name> <library> [<library> ...]
