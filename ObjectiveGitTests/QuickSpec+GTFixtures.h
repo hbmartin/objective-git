@@ -15,34 +15,39 @@
 // teardown logic for every example yet:
 // https://github.com/Quick/Quick/issues/163
 // TODO: https://github.com/Quick/Quick/blob/master/Documentation/en-us/ConfiguringQuick.md#adding-global-beforeeach-and-aftereach-closures
+//
+// The accessors are class-level because Quick's `QuickSpecBegin` macro
+// generates a `+spec` class method, so `self` inside example blocks is the
+// spec class. Per-example cleanup still happens through the instance
+// `-tearDown` override, which XCTest invokes after every example.
 @interface QuickSpec (GTFixtures)
 
 // The file URL for a temporary directory which will live for the length of each
 // example (`it`).
-@property (nonatomic, readonly, strong) NSURL *tempDirectoryFileURL;
+@property (class, nonatomic, readonly, strong) NSURL *tempDirectoryFileURL;
 
 // A fully fledged repository, great for testing nearly everything.
-- (GTRepository *)testAppFixtureRepository;
++ (GTRepository *)testAppFixtureRepository;
 
 /// A fork of Test_App.
-- (GTRepository *)testAppForkFixtureRepository;
++ (GTRepository *)testAppForkFixtureRepository;
 
 // A bare repository with a minimal history.
-- (GTRepository *)bareFixtureRepository;
++ (GTRepository *)bareFixtureRepository;
 
 // A repository which has a submodule.
-- (GTRepository *)submoduleFixtureRepository;
++ (GTRepository *)submoduleFixtureRepository;
 
 // A repository containing conflicts.
-- (GTRepository *)conflictedFixtureRepository;
++ (GTRepository *)conflictedFixtureRepository;
 
 // A pristine repository (bare).
-- (GTRepository *)blankBareFixtureRepository;
++ (GTRepository *)blankBareFixtureRepository;
 
 // A pristine repository.
-- (GTRepository *)blankFixtureRepository;
++ (GTRepository *)blankFixtureRepository;
 
 // A repository with unicode files.
-- (GTRepository *)testUnicodeFixtureRepository;
++ (GTRepository *)testUnicodeFixtureRepository;
 
 @end

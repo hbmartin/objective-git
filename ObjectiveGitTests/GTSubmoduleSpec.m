@@ -246,7 +246,10 @@ describe(@"dirty, checked out submodule", ^{
 
 		__block NSError *error = nil;
 		expect(@([submodule sync:&error])).to(beTruthy());
-		expect([config stringForKey:configKey]).to(equal(@"../Test_App"));
+
+		// libgit2 1.x resolves the relative URL from .gitmodules (`../Test_App`)
+		// against the parent repository's location, like `git submodule sync`.
+		expect([config stringForKey:configKey]).to(endWith(@"/Test_App"));
 	});
 });
 
