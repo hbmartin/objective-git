@@ -91,9 +91,20 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 
 	NSString *cleanRepositoryPath = [self.rootTempDirectory stringByAppendingPathComponent:@"clean_repository"];
 	if (![NSFileManager.defaultManager fileExistsAtPath:cleanRepositoryPath isDirectory:nil]) {
+		// Unzip into a staging directory and only move it into place on
+		// success, so an aborted extraction can't be mistaken for a valid
+		// cache by every later run.
+		NSString *stagingPath = [cleanRepositoryPath stringByAppendingPathExtension:@"staging"];
+		[NSFileManager.defaultManager removeItemAtPath:stagingPath error:NULL];
+
 		error = nil;
-		success = [self unzipFromArchiveAtPath:zippedRepositoriesPath intoDirectory:cleanRepositoryPath error:&error];
-		NSAssert(success, @"Couldn't unzip fixture \"%@\" from %@ to %@: %@", repositoryName, zippedRepositoriesPath, cleanRepositoryPath, error);
+		success = [self unzipFromArchiveAtPath:zippedRepositoriesPath intoDirectory:stagingPath error:&error];
+		if (!success) [NSFileManager.defaultManager removeItemAtPath:stagingPath error:NULL];
+		NSAssert(success, @"Couldn't unzip fixture \"%@\" from %@ to %@: %@", repositoryName, zippedRepositoriesPath, stagingPath, error);
+
+		error = nil;
+		success = [NSFileManager.defaultManager moveItemAtPath:stagingPath toPath:cleanRepositoryPath error:&error];
+		NSAssert(success, @"Couldn't move extracted fixtures from %@ to %@: %@", stagingPath, cleanRepositoryPath, error);
 	}
 
 	success = [[NSFileManager defaultManager] copyItemAtPath:[cleanRepositoryPath stringByAppendingPathComponent:repositoryName] toPath:path error:&error];
