@@ -21,6 +21,10 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 @property (class, nonatomic, readonly, copy) NSString *repositoryFixturesPath;
 @property (class, nonatomic, copy) NSString *tempDirectoryPath;
 
++ (BOOL)setUpTempDirectoryPath;
++ (BOOL)setUpRepositoryFixtureIfNeeded:(NSString *)repositoryName;
++ (BOOL)removeItemIfExistsAtPath:(NSString *)path error:(NSError **)error;
+
 @end
 
 @implementation QuickSpec (Fixtures)
@@ -31,7 +35,7 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 	NSString *path = objc_getAssociatedObject(self, _cmd);
 	if (path != nil) return path;
 
-	[self setUpTempDirectoryPath];
+	if (![self setUpTempDirectoryPath]) return nil;
 	return objc_getAssociatedObject(self, _cmd);
 }
 
@@ -40,11 +44,17 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 }
 
 + (NSURL *)tempDirectoryFileURL {
-	return [NSURL fileURLWithPath:self.tempDirectoryPath isDirectory:YES];
+	NSString *path = self.tempDirectoryPath;
+	if (path == nil) return nil;
+
+	return [NSURL fileURLWithPath:path isDirectory:YES];
 }
 
 + (NSString *)repositoryFixturesPath {
-	return [self.tempDirectoryPath stringByAppendingPathComponent:@"repositories"];
+	NSString *path = self.tempDirectoryPath;
+	if (path == nil) return nil;
+
+	return [path stringByAppendingPathComponent:@"repositories"];
 }
 
 #pragma mark Setup/Teardown
@@ -59,7 +69,10 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 	NSString *path = objc_getAssociatedObject(self, @selector(tempDirectoryPath));
 	if (path == nil) return;
 
-	[NSFileManager.defaultManager removeItemAtPath:path error:NULL];
+	NSError *error = nil;
+	BOOL success = [NSFileManager.defaultManager removeItemAtPath:path error:&error];
+	if (!success) XCTFail(@"Couldn't remove the temp fixtures directory at %@: %@", path, error);
+
 	self.tempDirectoryPath = nil;
 }
 
@@ -69,25 +82,41 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 	return [NSTemporaryDirectory() stringByAppendingPathComponent:@"com.libgit2.objectivegit"];
 }
 
-+ (void)setUpTempDirectoryPath {
-	self.tempDirectoryPath = [self.rootTempDirectory stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
++ (BOOL)setUpTempDirectoryPath {
+	NSString *path = [self.rootTempDirectory stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
 
 	NSError *error = nil;
-	BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:self.tempDirectoryPath withIntermediateDirectories:YES attributes:nil error:&error];
-	NSAssert(success, @"Couldn't create the temp fixtures directory at %@: %@", self.tempDirectoryPath, error);
+	BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&error];
+	if (!success) {
+		XCTFail(@"Couldn't create the temp fixtures directory at %@: %@", path, error);
+		return NO;
+	}
+
+	self.tempDirectoryPath = path;
+	return YES;
 }
 
-+ (void)setUpRepositoryFixtureIfNeeded:(NSString *)repositoryName {
-	NSString *path = [self.repositoryFixturesPath stringByAppendingPathComponent:repositoryName];
++ (BOOL)setUpRepositoryFixtureIfNeeded:(NSString *)repositoryName {
+	NSString *repositoryFixturesPath = self.repositoryFixturesPath;
+	if (repositoryFixturesPath == nil) return NO;
+
+	NSString *path = [repositoryFixturesPath stringByAppendingPathComponent:repositoryName];
 
 	BOOL isDirectory = NO;
-	if ([NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory] && isDirectory) return;
+	if ([NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory] && isDirectory) return YES;
 
 	NSError *error = nil;
-	BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:self.repositoryFixturesPath withIntermediateDirectories:YES attributes:nil error:&error];
-	NSAssert(success, @"Couldn't create the repository fixtures directory at %@: %@", self.repositoryFixturesPath, error);
+	BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:repositoryFixturesPath withIntermediateDirectories:YES attributes:nil error:&error];
+	if (!success) {
+		XCTFail(@"Couldn't create the repository fixtures directory at %@: %@", repositoryFixturesPath, error);
+		return NO;
+	}
 
 	NSString *zippedRepositoriesPath = [[NSBundle bundleForClass:self] pathForResource:@"fixtures" ofType:@"zip"];
+	if (zippedRepositoriesPath == nil) {
+		XCTFail(@"Couldn't find fixtures.zip in %@", [NSBundle bundleForClass:self]);
+		return NO;
+	}
 
 	NSString *cleanRepositoryPath = [self.rootTempDirectory stringByAppendingPathComponent:@"clean_repository"];
 	if (![NSFileManager.defaultManager fileExistsAtPath:cleanRepositoryPath isDirectory:nil]) {
@@ -95,26 +124,61 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 		// success, so an aborted extraction can't be mistaken for a valid
 		// cache by every later run.
 		NSString *stagingPath = [cleanRepositoryPath stringByAppendingPathExtension:@"staging"];
-		[NSFileManager.defaultManager removeItemAtPath:stagingPath error:NULL];
+		error = nil;
+		if (![self removeItemIfExistsAtPath:stagingPath error:&error]) {
+			XCTFail(@"Couldn't remove the stale fixture staging directory at %@: %@", stagingPath, error);
+			return NO;
+		}
 
 		error = nil;
 		success = [self unzipFromArchiveAtPath:zippedRepositoriesPath intoDirectory:stagingPath error:&error];
-		if (!success) [NSFileManager.defaultManager removeItemAtPath:stagingPath error:NULL];
-		NSAssert(success, @"Couldn't unzip fixture \"%@\" from %@ to %@: %@", repositoryName, zippedRepositoriesPath, stagingPath, error);
+		if (!success) {
+			NSError *unzipError = error;
+			NSError *cleanupError = nil;
+			BOOL cleanupSuccess = [self removeItemIfExistsAtPath:stagingPath error:&cleanupError];
+			if (cleanupSuccess) {
+				XCTFail(@"Couldn't unzip fixture \"%@\" from %@ to %@: %@", repositoryName, zippedRepositoriesPath, stagingPath, unzipError);
+			} else {
+				XCTFail(@"Couldn't unzip fixture \"%@\" from %@ to %@: %@; staging cleanup also failed: %@", repositoryName, zippedRepositoriesPath, stagingPath, unzipError, cleanupError);
+			}
+			return NO;
+		}
 
 		error = nil;
 		success = [NSFileManager.defaultManager moveItemAtPath:stagingPath toPath:cleanRepositoryPath error:&error];
-		NSAssert(success, @"Couldn't move extracted fixtures from %@ to %@: %@", stagingPath, cleanRepositoryPath, error);
+		if (!success) {
+			NSError *moveError = error;
+			NSError *cleanupError = nil;
+			BOOL cleanupSuccess = [self removeItemIfExistsAtPath:stagingPath error:&cleanupError];
+			if (cleanupSuccess) {
+				XCTFail(@"Couldn't move extracted fixtures from %@ to %@: %@", stagingPath, cleanRepositoryPath, moveError);
+			} else {
+				XCTFail(@"Couldn't move extracted fixtures from %@ to %@: %@; staging cleanup also failed: %@", stagingPath, cleanRepositoryPath, moveError, cleanupError);
+			}
+			return NO;
+		}
 	}
 
 	success = [[NSFileManager defaultManager] copyItemAtPath:[cleanRepositoryPath stringByAppendingPathComponent:repositoryName] toPath:path error:&error];
-	NSAssert(success, @"Couldn't copy directory %@", error);
+	if (!success) {
+		XCTFail(@"Couldn't copy fixture \"%@\" from %@ to %@: %@", repositoryName, cleanRepositoryPath, path, error);
+		return NO;
+	}
+
+	return YES;
 }
 
 + (NSString *)pathForFixtureRepositoryNamed:(NSString *)repositoryName {
-	[self setUpRepositoryFixtureIfNeeded:repositoryName];
+	if (![self setUpRepositoryFixtureIfNeeded:repositoryName]) return nil;
 
 	return [self.repositoryFixturesPath stringByAppendingPathComponent:repositoryName];
+}
+
++ (BOOL)removeItemIfExistsAtPath:(NSString *)path error:(NSError **)error {
+	NSFileManager *fileManager = NSFileManager.defaultManager;
+	if (![fileManager fileExistsAtPath:path]) return YES;
+
+	return [fileManager removeItemAtPath:path error:error];
 }
 
 + (BOOL)unzipFromArchiveAtPath:(NSString *)zipPath intoDirectory:(NSString *)destinationPath error:(NSError **)error {
@@ -131,9 +195,13 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 #pragma mark API
 
 + (GTRepository *)fixtureRepositoryNamed:(NSString *)name {
-	NSURL *url = [NSURL fileURLWithPath:[self pathForFixtureRepositoryNamed:name]];
+	NSString *path = [self pathForFixtureRepositoryNamed:name];
+	if (path == nil) return nil;
+
+	NSURL *url = [NSURL fileURLWithPath:path];
 	GTRepository *repository = [[GTRepository alloc] initWithURL:url error:NULL];
-	NSAssert(repository != nil, @"Couldn't create a repository for %@", name);
+	if (repository == nil) XCTFail(@"Couldn't create a repository for %@", name);
+
 	return repository;
 }
 
@@ -162,21 +230,28 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 }
 
 + (GTRepository *)blankFixtureRepository {
-	NSURL *repoURL = [self.tempDirectoryFileURL URLByAppendingPathComponent:@"blank-repo"];
+	NSURL *tempDirectoryURL = self.tempDirectoryFileURL;
+	if (tempDirectoryURL == nil) return nil;
 
+	NSURL *repoURL = [tempDirectoryURL URLByAppendingPathComponent:@"blank-repo"];
 	GTRepository *repository = [GTRepository initializeEmptyRepositoryAtFileURL:repoURL options:nil error:NULL];
-	NSAssert(repository != nil, @"Couldn't create a blank repository");
+	if (repository == nil) XCTFail(@"Couldn't create a blank repository");
+
 	return repository;
 }
 
 + (GTRepository *)blankBareFixtureRepository {
-	NSURL *repoURL = [self.tempDirectoryFileURL URLByAppendingPathComponent:@"blank-repo.git"];
+	NSURL *tempDirectoryURL = self.tempDirectoryFileURL;
+	if (tempDirectoryURL == nil) return nil;
+
+	NSURL *repoURL = [tempDirectoryURL URLByAppendingPathComponent:@"blank-repo.git"];
 	NSDictionary *options = @{
 		GTRepositoryInitOptionsFlags: @(GTRepositoryInitBare | GTRepositoryInitCreatingRepositoryDirectory)
 	};
 
 	GTRepository *repository = [GTRepository initializeEmptyRepositoryAtFileURL:repoURL options:options error:NULL];
-	NSAssert(repository != nil, @"Couldn't create a blank repository");
+	if (repository == nil) XCTFail(@"Couldn't create a blank repository");
+
 	return repository;
 }
 
