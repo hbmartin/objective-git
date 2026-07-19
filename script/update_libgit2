@@ -34,14 +34,16 @@ product="libgit2.a"
 install_path="${EXTERNAL_DIR}/${product}"
 stamp_path="${EXTERNAL_DIR}/.libgit2-build.stamp"
 
-# OpenSSL is keg-only, so add its pkgconfig location manually.
-if [ "$(uname -m)" = "arm64" ]; then
-  echo "Running on Apple Silicon"
-  ARCH_PREFIX=/opt/homebrew
-else
-  echo "Running on Apple x86"
-  ARCH_PREFIX=/usr/local
+# This build is arm64-only, and script/bootstrap stages host-arch homebrew
+# libssh2/libcrypto next to the libgit2.a produced here; an Intel host would
+# silently assemble an unlinkable x86_64/arm64 mix.
+if [ "$(uname -m)" != "arm64" ]; then
+  echo "error: this build is arm64-only (script/bootstrap stages host-arch homebrew libssh2/libcrypto); an Apple Silicon host is required." >&2
+  exit 1
 fi
+ARCH_PREFIX=/opt/homebrew
+
+# OpenSSL is keg-only, so add its pkgconfig location manually.
 export PKG_CONFIG_PATH="$ARCH_PREFIX/opt/openssl/lib/pkgconfig:$ARCH_PREFIX/lib/pkgconfig"
 
 # augment path to help it find cmake installed in /usr/local/bin or

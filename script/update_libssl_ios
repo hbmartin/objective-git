@@ -8,8 +8,8 @@ source "${SCRIPT_DIR}/ios_build_functions.sh"
 
 function setup ()
 {
-    if [ -f "${INSTALL_PATH}/lib/libssl.a" -a \
-       -f "${INSTALL_PATH}/lib/libcrypto.a" -a \
+    if [ -d "${INSTALL_PATH}/libssl.xcframework" -a \
+       -d "${INSTALL_PATH}/libcrypto.xcframework" -a \
        -d "${INSTALL_PATH}/include/openssl" ]
     then
         echo "No update needed."
@@ -21,21 +21,15 @@ function setup ()
 
 function build_ssl ()
 {
+    rm -rf "${ARCH_INSTALL_PATH}/openssl"
     cp -r "${ROOT_PATH}/External/openssl" "${ARCH_INSTALL_PATH}/openssl"
     pushd "${ARCH_INSTALL_PATH}/openssl" > /dev/null
 
-    if [ "${ARCH}" == "arm64" ] || [ "${ARCH}" == "x86_64" ]
-    then
-        HOST="BSD-generic64"
-        CONFIG="no-gost no-asm enable-ec_nistp_64_gcc_128"
-    else
-        HOST="BSD-generic32"
-        CONFIG="no-gost no-asm"
-        perl -i -pe 's|static volatile sig_atomic_t intr_signal|static volatile int intr_signal|' crypto/ui/ui_openssl.c
-    fi
+    HOST="BSD-generic64"
+    CONFIG="no-gost no-asm enable-ec_nistp_64_gcc_128"
 
     ./Configure ${HOST} ${CONFIG} --openssldir="${ARCH_INSTALL_PATH}" >> "${LOG}" 2>&1
-    perl -i -pe "s|^CC= gcc|CC= ${CLANG} -miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET} -arch ${ARCH} -fembed-bitcode |g" Makefile >> "${LOG}" 2>&1
+    perl -i -pe "s|^CC= gcc|CC= ${CLANG} -target ${CLANG_TARGET} -arch ${ARCH} |g" Makefile >> "${LOG}" 2>&1
     perl -i -pe "s|^CFLAG= (.*)|CFLAG= -isysroot ${SDKROOT} \$1|g" Makefile >> "${LOG}" 2>&1
     make >> "${LOG}" 2>&1
 
@@ -48,21 +42,17 @@ function build_ssl ()
     BUILT_SSL_PATHS+=("${ARCH_INSTALL_PATH}/lib/libssl.a")
 }
 
-function fat_binary ()
+function create_xcframeworks ()
 {
-    echo "Copying headers & pkg-config files"
+    echo "Copying headers"
     cp -r "${ARCH_INSTALL_PATH}/include/openssl" "${INSTALL_PATH}/include/"
-    for pkgfile in "${ARCH_INSTALL_PATH}"/lib/pkgconfig/*.pc; do
-      cp "${pkgfile}" "${INSTALL_PATH}/lib/pkgconfig/"
-      perl -i -pe "s|^(prefix=${INSTALL_PATH}).*$|\$1|g" "${INSTALL_PATH}/lib/pkgconfig/$(basename "${pkgfile}")" >> "${LOG}" 2>&1
-    done
 
-    echo "Building fat binary..."
+    echo "Creating libcrypto.xcframework and libssl.xcframework..."
 
-    lipo -create "${BUILT_CRYPTO_PATHS[@]}" -output "${INSTALL_PATH}/lib/libcrypto.a"
-    lipo -create "${BUILT_SSL_PATHS[@]}" -output "${INSTALL_PATH}/lib/libssl.a"
+    create_xcframework libcrypto "${BUILT_CRYPTO_PATHS[@]}"
+    create_xcframework libssl "${BUILT_SSL_PATHS[@]}"
 
     echo "Building done."
 }
 
-build_all_archs setup build_ssl fat_binary
+build_all_slices setup build_ssl create_xcframeworks

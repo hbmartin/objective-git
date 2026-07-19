@@ -29,47 +29,55 @@ function setup_build_environment ()
         IPHONEOS_DEPLOYMENT_TARGET="12.0"
     fi
 
-    # A legacy universal archive can contain only one slice per CPU
-    # architecture, so it cannot combine arm64 device and simulator slices.
-    # Keep an Intel simulator slice alongside the modern arm64 device slice.
-    IOS_ARCHS="${IOS_ARCHS:-x86_64 arm64}"
+    # Each slice is a "<platform>:<arch>" pair. An XCFramework can carry a
+    # device arm64 slice and a simulator arm64 slice side by side (a lipo'd
+    # fat archive could not hold two slices of the same architecture).
+    IOS_SLICES="${IOS_SLICES:-iphoneos:arm64 iphonesimulator:arm64}"
 
     # Setup a shared area for our build artifacts
     INSTALL_PATH="${ROOT_PATH}/External/build"
     mkdir -p "${INSTALL_PATH}"
     mkdir -p "${INSTALL_PATH}/log"
     mkdir -p "${INSTALL_PATH}/include"
-    mkdir -p "${INSTALL_PATH}/lib/pkgconfig"
 }
 
-function build_all_archs ()
+function build_all_slices ()
 {
     setup_build_environment
 
     local setup=$1
-    local build_arch=$2
+    local build_slice=$2
     local finish_build=$3
 
     # run the prepare function
     eval $setup
 
-    echo "Building for ${IOS_ARCHS}"
+    echo "Building slices: ${IOS_SLICES}"
 
-    for ARCH in ${IOS_ARCHS}
+    for SLICE in ${IOS_SLICES}
     do
-        if [ "${ARCH}" == "x86_64" ]
-        then
-            PLATFORM="iphonesimulator"
-        else
-            PLATFORM="iphoneos"
-        fi
+        PLATFORM="${SLICE%%:*}"
+        ARCH="${SLICE#*:}"
+
+        case "${PLATFORM}" in
+            iphoneos)
+                CLANG_TARGET="${ARCH}-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}"
+                ;;
+            iphonesimulator)
+                CLANG_TARGET="${ARCH}-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-simulator"
+                ;;
+            *)
+                echo "error: unknown platform '${PLATFORM}' in slice '${SLICE}'" >&2
+                exit 1
+                ;;
+        esac
 
         SDKVERSION=$(ios_sdk_version)
 
         SDKNAME="${PLATFORM}${SDKVERSION}"
         SDKROOT="$(ios_sdk_path ${SDKNAME})"
 
-        LOG="${INSTALL_PATH}/log/${LIBRARY_NAME}-${ARCH}.log"
+        LOG="${INSTALL_PATH}/log/${LIBRARY_NAME}-${PLATFORM}-${ARCH}.log"
         [ -f "${LOG}" ] && rm "${LOG}"
 
         echo "Building ${LIBRARY_NAME} for ${SDKNAME} ${ARCH}"
@@ -79,10 +87,32 @@ function build_all_archs ()
         ARCH_INSTALL_PATH="${INSTALL_PATH}/${SDKNAME}-${ARCH}.sdk"
         mkdir -p "${ARCH_INSTALL_PATH}"
 
-        # run the per arch build command
-        eval $build_arch
+        # run the per slice build command
+        eval $build_slice
     done
 
-    # finish the build (usually lipo)
+    # finish the build (create the xcframework)
     eval $finish_build
+}
+
+# create_xcframework <name> <library> [<library> ...]
+# Combines one static library per slice into External/build/<name>.xcframework.
+function create_xcframework ()
+{
+    local name=$1
+    shift
+
+    local output="${INSTALL_PATH}/${name}.xcframework"
+    local args=()
+    local library
+
+    for library in "$@"
+    do
+        args+=(-library "${library}")
+    done
+
+    # xcodebuild refuses to overwrite an existing bundle
+    rm -rf "${output}"
+
+    /usr/bin/xcrun xcodebuild -create-xcframework "${args[@]}" -output "${output}"
 }

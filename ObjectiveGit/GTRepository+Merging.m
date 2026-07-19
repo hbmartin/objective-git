@@ -128,8 +128,9 @@ int GTMergeHeadEntriesCallback(const git_oid *oid, void *payload) {
 		// Check for conflict
 		if (index.hasConflicts) {
 			NSMutableArray <NSString *>*files = [NSMutableArray array];
-			[index enumerateConflictedFilesWithError:error usingBlock:^(GTIndexEntry * _Nonnull ancestor, GTIndexEntry * _Nonnull ours, GTIndexEntry * _Nonnull theirs, BOOL * _Nonnull stop) {
-				[files addObject:ours.path];
+			[index enumerateConflictedFilesWithError:error usingBlock:^(GTIndexEntry * _Nullable ancestor, GTIndexEntry * _Nullable ours, GTIndexEntry * _Nullable theirs, BOOL * _Nonnull stop) {
+				NSString *path = ours.path ?: theirs.path ?: ancestor.path;
+				if (path != nil) [files addObject:path];
 			}];
 
 			if (error != NULL) {
@@ -172,7 +173,7 @@ int GTMergeHeadEntriesCallback(const git_oid *oid, void *payload) {
 	return NO;
 }
 
-- (NSString * _Nullable)contentsOfDiffWithAncestor:(GTIndexEntry *)ancestor ourSide:(GTIndexEntry *)ourSide theirSide:(GTIndexEntry *)theirSide error:(NSError **)error {
+- (NSString * _Nullable)contentsOfDiffWithAncestor:(GTIndexEntry * _Nullable)ancestor ourSide:(GTIndexEntry * _Nullable)ourSide theirSide:(GTIndexEntry * _Nullable)theirSide error:(NSError **)error {
 
 	GTObjectDatabase *database = [self objectDatabaseWithError:error];
 	if (database == nil) {
@@ -187,14 +188,19 @@ int GTMergeHeadEntriesCallback(const git_oid *oid, void *payload) {
 		return nil;
 	}
 
-	git_oid ancestorId = ancestor.git_index_entry->id;
-	GTOID *ancestorOID = [[GTOID alloc] initWithGitOid:&ancestorId];
-	NSData *ancestorData = [[database objectWithOID:ancestorOID error: error] data];
-	if (ancestorData == nil) {
-		return nil;
+	__attribute__((objc_precise_lifetime)) NSData *ancestorData = nil;
+	const git_merge_file_input *ancestorInputPointer = NULL;
+	if (ancestor != nil) {
+		git_oid ancestorId = ancestor.git_index_entry->id;
+		GTOID *ancestorOID = [[GTOID alloc] initWithGitOid:&ancestorId];
+		ancestorData = [[database objectWithOID:ancestorOID error:error] data];
+		if (ancestorData == nil) {
+			return nil;
+		}
+		ancestorInput.ptr = ancestorData.bytes;
+		ancestorInput.size = ancestorData.length;
+		ancestorInputPointer = &ancestorInput;
 	}
-	ancestorInput.ptr = ancestorData.bytes;
-	ancestorInput.size = ancestorData.length;
 
 
 	// initialize our merge file input
@@ -205,14 +211,17 @@ int GTMergeHeadEntriesCallback(const git_oid *oid, void *payload) {
 		return nil;
 	}
 
-	git_oid ourId = ourSide.git_index_entry->id;
-	GTOID *ourOID = [[GTOID alloc] initWithGitOid:&ourId];
-	NSData *ourData = [[database objectWithOID:ourOID error: error] data];
-	if (ourData == nil) {
-		return nil;
+	__attribute__((objc_precise_lifetime)) NSData *ourData = nil;
+	if (ourSide != nil) {
+		git_oid ourId = ourSide.git_index_entry->id;
+		GTOID *ourOID = [[GTOID alloc] initWithGitOid:&ourId];
+		ourData = [[database objectWithOID:ourOID error:error] data];
+		if (ourData == nil) {
+			return nil;
+		}
+		ourInput.ptr = ourData.bytes;
+		ourInput.size = ourData.length;
 	}
-	ourInput.ptr = ourData.bytes;
-	ourInput.size = ourData.length;
 
 
 	// initialize their merge file input
@@ -223,18 +232,21 @@ int GTMergeHeadEntriesCallback(const git_oid *oid, void *payload) {
 		return nil;
 	}
 
-	git_oid theirId = theirSide.git_index_entry->id;
-	GTOID *theirOID = [[GTOID alloc] initWithGitOid:&theirId];
-	NSData *theirData = [[database objectWithOID:theirOID error: error] data];
-	if (theirData == nil) {
-		return nil;
+	__attribute__((objc_precise_lifetime)) NSData *theirData = nil;
+	if (theirSide != nil) {
+		git_oid theirId = theirSide.git_index_entry->id;
+		GTOID *theirOID = [[GTOID alloc] initWithGitOid:&theirId];
+		theirData = [[database objectWithOID:theirOID error:error] data];
+		if (theirData == nil) {
+			return nil;
+		}
+		theirInput.ptr = theirData.bytes;
+		theirInput.size = theirData.length;
 	}
-	theirInput.ptr = theirData.bytes;
-	theirInput.size = theirData.length;
 
 
 	git_merge_file_result result;
-	gitError = git_merge_file(&result, &ancestorInput, &ourInput, &theirInput, nil);
+	gitError = git_merge_file(&result, ancestorInputPointer, &ourInput, &theirInput, NULL);
 	if (gitError != GIT_OK) {
 		if (error != NULL) *error = [NSError git_errorFor:gitError description:@"Failed to create merge file"];
 		return nil;

@@ -292,7 +292,7 @@ typedef BOOL (^GTIndexPathspecMatchedBlock)(NSString *matchedPathspec, NSString 
 	return (BOOL)git_index_has_conflicts(self.git_index);
 }
 
-- (BOOL)enumerateConflictedFilesWithError:(NSError **)error usingBlock:(void (^)(GTIndexEntry *ancestor, GTIndexEntry *ours, GTIndexEntry *theirs, BOOL *stop))block {
+- (BOOL)enumerateConflictedFilesWithError:(NSError **)error usingBlock:(void (^)(GTIndexEntry * _Nullable ancestor, GTIndexEntry * _Nullable ours, GTIndexEntry * _Nullable theirs, BOOL *stop))block {
 	NSParameterAssert(block != nil);
 	if (!self.hasConflicts) return YES;
 
@@ -320,17 +320,17 @@ typedef BOOL (^GTIndexPathspecMatchedBlock)(NSString *matchedPathspec, NSString 
 			return NO;
 		}
 
-		GTIndexEntry *blockAncestor;
+		GTIndexEntry *blockAncestor = nil;
 		if (ancestor != NULL) {
 			blockAncestor = [[GTIndexEntry alloc] initWithGitIndexEntry:ancestor];
 		}
 
-		GTIndexEntry *blockOurs;
+		GTIndexEntry *blockOurs = nil;
 		if (ours != NULL) {
 			blockOurs = [[GTIndexEntry alloc] initWithGitIndexEntry:ours];
 		}
 
-		GTIndexEntry *blockTheirs;
+		GTIndexEntry *blockTheirs = nil;
 		if (theirs != NULL) {
 			blockTheirs = [[GTIndexEntry alloc] initWithGitIndexEntry:theirs];
 		}

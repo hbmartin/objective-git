@@ -233,7 +233,9 @@ static NSString *referenceTypeToString(GTReferenceType type) {
 	return [[GTReflog alloc] initWithReference:self];
 }
 
-+ (BOOL)isValidReferenceName:(NSString *)refName {
++ (BOOL)isValidReferenceName:(NSString * _Nullable)refName {
+	if (refName == nil) return NO;
+
 	int valid = 0;
 	int gitError = git_reference_name_is_valid(&valid, refName.UTF8String);
 	return gitError == GIT_OK && valid != 0;

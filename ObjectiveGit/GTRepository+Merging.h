@@ -57,13 +57,13 @@ typedef NS_OPTIONS(NSInteger, GTMergeAnalysis) {
 ///
 /// The parameters taked are the ones received from `enumerateConflictedFiles`.
 ///
-/// ancestor - The ancestor entry
-/// ours     - The index entry of our side
-/// theirs   - The index entry of their side
+/// ancestor - The ancestor entry, or nil when no common ancestor exists.
+/// ours     - The index entry of our side, or nil when it was deleted.
+/// theirs   - The index entry of their side, or nil when it was deleted.
 /// error    - The error if one occurred. Can be NULL.
 ///
 /// Returns The file content annotated with conflict markers or null on error
-- (NSString * _Nullable)contentsOfDiffWithAncestor:(GTIndexEntry *)ancestor ourSide:(GTIndexEntry *)ourSide theirSide:(GTIndexEntry *)theirSide error:(NSError **)error;
+- (NSString * _Nullable)contentsOfDiffWithAncestor:(GTIndexEntry * _Nullable)ancestor ourSide:(GTIndexEntry * _Nullable)ourSide theirSide:(GTIndexEntry * _Nullable)theirSide error:(NSError **)error;
 
 /// Analyze which merge to perform.
 ///

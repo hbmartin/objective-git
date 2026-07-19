@@ -294,10 +294,25 @@ describe(@"-contentsOfDiffWithAncestor:ourSide:theirSide:error:", ^{
 		GTIndex *conflictIndex = [otherTree merge:masterTree ancestor:parent.tree error:NULL];
 		expect(@([conflictIndex hasConflicts])).to(beTruthy());
 
-		[conflictIndex enumerateConflictedFilesWithError:NULL usingBlock:^(GTIndexEntry * _Nonnull ancestor, GTIndexEntry * _Nonnull ours, GTIndexEntry * _Nonnull theirs, BOOL * _Nonnull stop) {
+		[conflictIndex enumerateConflictedFilesWithError:NULL usingBlock:^(GTIndexEntry * _Nullable ancestor, GTIndexEntry * _Nullable ours, GTIndexEntry * _Nullable theirs, BOOL * _Nonnull stop) {
 
 			NSString *conflictString = [repository contentsOfDiffWithAncestor:ancestor ourSide:ours theirSide:theirs error:NULL];
 			expect(conflictString).to(equal(@"//\n//  main.m\n//  Test\n//\n//  Created by Joe Ricioppo on 9/28/10.\n//  Copyright 2010 __MyCompanyName__. All rights reserved.\n//\n\n#import <Cocoa/Cocoa.h>\n\nint main(int argc, char *argv[])\n{\n<<<<<<< file.txt\n    //The meaning of life is 42\n=======\n    //The meaning of life is 41\n>>>>>>> file.txt\n    return NSApplicationMain(argc,  (const char **) argv);\n}\n123456789\n123456789\n123456789\n123456789!blah!\n"));
+
+			NSError *error = nil;
+			NSString *withoutAncestor = [repository contentsOfDiffWithAncestor:nil ourSide:ours theirSide:theirs error:&error];
+			expect(withoutAncestor).notTo(beNil());
+			expect(error).to(beNil());
+
+			error = nil;
+			NSString *withoutOurs = [repository contentsOfDiffWithAncestor:ancestor ourSide:nil theirSide:theirs error:&error];
+			expect(withoutOurs).notTo(beNil());
+			expect(error).to(beNil());
+
+			error = nil;
+			NSString *withoutTheirs = [repository contentsOfDiffWithAncestor:ancestor ourSide:ours theirSide:nil error:&error];
+			expect(withoutTheirs).notTo(beNil());
+			expect(error).to(beNil());
 		}];
 	});
 });

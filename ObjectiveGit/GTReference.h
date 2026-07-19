@@ -150,10 +150,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Checks if a reference name is acceptable.
 ///
-/// refName - The name to be checked.
+/// refName - The name to be checked. Passing nil returns NO.
 ///
 /// Returns YES if the name is valid or NO otherwise.
-+ (BOOL)isValidReferenceName:(NSString *)refName;
++ (BOOL)isValidReferenceName:(NSString * _Nullable)refName;
 
 @end
 

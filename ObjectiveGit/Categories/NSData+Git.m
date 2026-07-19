@@ -117,7 +117,10 @@ static void GTConsumeBuffer(git_buf *buffer) {
 }
 
 - (BOOL)git_containsNUL {
-	return memchr(self.bytes, '\0', self.length) != NULL;
+	// Empty NSData may report NULL bytes, which memchr must never receive.
+	const void *bytes = self.bytes;
+	if (bytes == NULL || self.length == 0) return NO;
+	return memchr(bytes, '\0', self.length) != NULL;
 }
 
 - (BOOL)git_isBinary {

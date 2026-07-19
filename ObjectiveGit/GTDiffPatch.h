@@ -54,8 +54,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// Returns the raw size of the delta, in bytes.
 - (NSUInteger)sizeWithContext:(BOOL)includeContext hunkHeaders:(BOOL)includeHunkHeaders fileHeaders:(BOOL)includeFileHeaders;
 
-/// Returns the raw patch data.
-- (NSData *)patchData;
+/// Returns the raw patch data, or nil if generating the patch failed.
+- (NSData * _Nullable)patchData;
 
 /// Enumerate the hunks contained in the patch.
 ///

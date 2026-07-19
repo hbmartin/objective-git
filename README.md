@@ -112,7 +112,7 @@ _dSYM files are not currently included in the GitHub release zip files. You will
 1. Unzip the file.
 1. Follow the Carthage instructions #3 or #4, depending on platform.
 
-Note that the iOS framework we release is a "fat" framework containing slices for both the iOS Simulator and devices. This makes it easy to get started with your iOS project. However, Apple does not currently allow apps containing frameworks with simulator slices to be submitted to the app store. Carthage (above) already has a solution for this. If you're looking to roll your own, take a look at Realm's [strip frameworks script](https://github.com/realm/realm-cocoa/blob/master/scripts/strip-frameworks.sh).
+Note that the iOS dependencies (libgit2, libssh2, OpenSSL) are built as XCFrameworks containing arm64 slices for both devices and the iOS Simulator on Apple Silicon. Intel (x86_64) is no longer supported. Because XCFrameworks keep the device and simulator slices separate, no simulator-slice stripping is needed before App Store submission.
 
 
 ## Subproject

@@ -10,6 +10,8 @@
 
 #import "GTDiffHunk.h"
 
+#import "git2/errors.h"
+
 @interface GTDiffPatch ()
 
 @property (nonatomic, assign, readonly) git_patch *git_patch;
@@ -66,11 +68,12 @@
 
 - (NSData *)patchData {
 	git_buf buf = GIT_BUF_INIT;
-	git_patch_to_buf(&buf, self.git_patch);
+	int gitError = git_patch_to_buf(&buf, self.git_patch);
+	if (gitError != GIT_OK) return nil;
 
 	NSData *buffer = [[NSData alloc] initWithBytes:buf.ptr length:buf.size];
 	git_buf_dispose(&buf);
-	
+
 	return buffer;
 }
 
