@@ -13,8 +13,9 @@
 #import "QuickSpec+GTFixtures.h"
 
 // This spec constructs libgit2 buffers directly to exercise `+git_dataWithBuffer:`.
-// `git_buf_set` / `git_buf_free` / `GIT_BUF_INIT_CONST` moved to the deprecated
-// header in libgit2 1.x; import it narrowly here to build test fixtures.
+// `git_buf_set` / `GIT_BUF_INIT_CONST` moved to the deprecated header in
+// libgit2 1.x and have no modern equivalents; import it narrowly here to build
+// test fixtures.
 #import "git2/deprecated.h"
 
 QuickSpecBegin(NSDataGit)
@@ -35,7 +36,7 @@ describe(@"+git_dataWithBuffer:", ^{
 	});
 
 	afterEach(^{
-		git_buf_free(&buffer);
+		git_buf_dispose(&buffer);
 	});
 
 	it(@"should create matching NSData", ^{
@@ -54,7 +55,7 @@ describe(@"+git_dataWithBuffer:", ^{
 	});
 
 	it(@"should safely consume a malformed buffer with a NULL pointer", ^{
-		git_buf_free(&buffer);
+		git_buf_dispose(&buffer);
 		buffer = (git_buf)GIT_BUF_INIT_CONST(NULL, 1);
 
 		NSData *data = [NSData git_dataWithBuffer:&buffer];
