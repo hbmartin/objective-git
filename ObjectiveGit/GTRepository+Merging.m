@@ -174,6 +174,7 @@ int GTMergeHeadEntriesCallback(const git_oid *oid, void *payload) {
 }
 
 - (NSString * _Nullable)contentsOfDiffWithAncestor:(GTIndexEntry * _Nullable)ancestor ourSide:(GTIndexEntry * _Nullable)ourSide theirSide:(GTIndexEntry * _Nullable)theirSide error:(NSError **)error {
+	NSParameterAssert(ancestor != nil || ourSide != nil || theirSide != nil);
 
 	GTObjectDatabase *database = [self objectDatabaseWithError:error];
 	if (database == nil) {

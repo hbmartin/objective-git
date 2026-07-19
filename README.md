@@ -47,6 +47,13 @@ Homebrew, you will need to install the following manually:
 
 To develop ObjectiveGit on its own, open the `ObjectiveGitFramework.xcworkspace` file.
 
+### Initialization
+
+ObjectiveGit initializes libgit2 automatically when the framework is loaded. If
+that initialization fails, the library cannot be used safely, so the process is
+intentionally terminated with `abort()` after the failure is logged to the
+unified log (subsystem `org.libgit2.objective-git`).
+
 # Installation
 
 There are three ways of including ObjectiveGit in a project:

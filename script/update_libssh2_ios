@@ -8,7 +8,9 @@ source "${SCRIPT_DIR}/ios_build_functions.sh"
 
 function setup ()
 {
-    if [ -d "${INSTALL_PATH}/libssh2.xcframework" ]
+    # update_libgit2_ios links the per-slice libssh2.a, so the xcframework
+    # alone is not enough to skip a rebuild after a partial clean.
+    if [ -d "${INSTALL_PATH}/libssh2.xcframework" ] && slice_libraries_exist libssh2.a
     then
         echo "No update needed."
         exit 0

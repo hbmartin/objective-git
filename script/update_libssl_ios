@@ -8,9 +8,12 @@ source "${SCRIPT_DIR}/ios_build_functions.sh"
 
 function setup ()
 {
+    # update_libssh2_ios links the per-slice libssl.a/libcrypto.a, so the
+    # xcframeworks alone are not enough to skip a rebuild after a partial
+    # clean.
     if [ -d "${INSTALL_PATH}/libssl.xcframework" -a \
        -d "${INSTALL_PATH}/libcrypto.xcframework" -a \
-       -d "${INSTALL_PATH}/include/openssl" ]
+       -d "${INSTALL_PATH}/include/openssl" ] && slice_libraries_exist libssl.a libcrypto.a
     then
         echo "No update needed."
         exit 0

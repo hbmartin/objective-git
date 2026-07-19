@@ -69,7 +69,10 @@
 - (NSData *)patchData {
 	git_buf buf = GIT_BUF_INIT;
 	int gitError = git_patch_to_buf(&buf, self.git_patch);
-	if (gitError != GIT_OK) return nil;
+	if (gitError != GIT_OK) {
+		git_buf_dispose(&buf);
+		return nil;
+	}
 
 	NSData *buffer = [[NSData alloc] initWithBytes:buf.ptr length:buf.size];
 	git_buf_dispose(&buf);
