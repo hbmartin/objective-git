@@ -49,6 +49,18 @@ describe(@"+git_dataWithBuffer:", ^{
 		expect(@(buffer.asize)).to(equal(@0));
 		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
 	});
+
+	it(@"should preserve an empty buffer", ^{
+		git_buf_free(&buffer);
+		buffer = (git_buf)GIT_BUF_INIT_CONST(NULL, 0);
+
+		NSData *data = [NSData git_dataWithBuffer:&buffer];
+
+		expect(data).notTo(beNil());
+		expect(@(data.length)).to(equal(@0));
+		expect(@(buffer.size)).to(equal(@0));
+		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:NULL]));
+	});
 });
 
 describe(@"git_buf", ^{
@@ -64,6 +76,23 @@ describe(@"git_buf", ^{
 		expect([NSValue valueWithPointer:buffer.ptr]).to(equal([NSValue valueWithPointer:data.bytes]));
 		expect(@(buffer.size)).to(equal(@(data.length)));
 		expect(@(buffer.asize)).to(equal(@0));
+	});
+});
+
+describe(@"data classification", ^{
+	it(@"should detect embedded NUL bytes", ^{
+		const unsigned char bytes[] = { 'g', 'i', 't', 0, 'x' };
+		NSData *data = [NSData dataWithBytes:bytes length:sizeof(bytes)];
+
+		expect(@(data.git_containsNUL)).to(beTruthy());
+		expect(@(data.git_isBinary)).to(beTruthy());
+	});
+
+	it(@"should keep ordinary UTF-8 text classified as text", ^{
+		NSData *data = [@"GitX Snow Leopard" dataUsingEncoding:NSUTF8StringEncoding];
+
+		expect(@(data.git_containsNUL)).to(beFalsy());
+		expect(@(data.git_isBinary)).to(beFalsy());
 	});
 });
 
