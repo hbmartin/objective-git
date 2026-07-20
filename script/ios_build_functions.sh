@@ -107,12 +107,30 @@ function build_all_slices ()
 function slice_libraries_exist ()
 {
     local sdkversion slice platform arch library
+    local found_slice=0
     sdkversion=$(ios_sdk_version)
 
     for slice in ${IOS_SLICES}
     do
+        found_slice=1
         platform="${slice%%:*}"
         arch="${slice#*:}"
+
+        case "${platform}" in
+            iphoneos|iphonesimulator)
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+
+        # Require exactly one colon and a non-empty architecture.
+        if [ "${slice}" = "${slice#*:}" ] || \
+           [ -z "${arch}" ] || \
+           [ "${arch}" != "${arch%%:*}" ]
+        then
+            return 1
+        fi
 
         for library in "$@"
         do
@@ -123,7 +141,7 @@ function slice_libraries_exist ()
         done
     done
 
-    return 0
+    [ "${found_slice}" -eq 1 ]
 }
 
 # create_xcframework <name> <library> [<library> ...]
