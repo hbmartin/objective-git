@@ -175,10 +175,16 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 }
 
 + (BOOL)removeItemIfExistsAtPath:(NSString *)path error:(NSError **)error {
-	NSFileManager *fileManager = NSFileManager.defaultManager;
-	if (![fileManager fileExistsAtPath:path]) return YES;
+	if (path == nil) return YES;
 
-	return [fileManager removeItemAtPath:path error:error];
+	NSFileManager *fileManager = NSFileManager.defaultManager;
+	NSError *localError = nil;
+	if ([fileManager removeItemAtPath:path error:&localError]) return YES;
+
+	if ([localError.domain isEqualToString:NSCocoaErrorDomain] && localError.code == NSFileNoSuchFileError) return YES;
+
+	if (error != NULL) *error = localError;
+	return NO;
 }
 
 + (BOOL)unzipFromArchiveAtPath:(NSString *)zipPath intoDirectory:(NSString *)destinationPath error:(NSError **)error {
@@ -199,8 +205,9 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 	if (path == nil) return nil;
 
 	NSURL *url = [NSURL fileURLWithPath:path];
-	GTRepository *repository = [[GTRepository alloc] initWithURL:url error:NULL];
-	if (repository == nil) XCTFail(@"Couldn't create a repository for %@", name);
+	NSError *error = nil;
+	GTRepository *repository = [[GTRepository alloc] initWithURL:url error:&error];
+	if (repository == nil) XCTFail(@"Couldn't create a repository for %@: %@", name, error);
 
 	return repository;
 }
@@ -234,8 +241,9 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 	if (tempDirectoryURL == nil) return nil;
 
 	NSURL *repoURL = [tempDirectoryURL URLByAppendingPathComponent:@"blank-repo"];
-	GTRepository *repository = [GTRepository initializeEmptyRepositoryAtFileURL:repoURL options:nil error:NULL];
-	if (repository == nil) XCTFail(@"Couldn't create a blank repository");
+	NSError *error = nil;
+	GTRepository *repository = [GTRepository initializeEmptyRepositoryAtFileURL:repoURL options:nil error:&error];
+	if (repository == nil) XCTFail(@"Couldn't create a blank repository: %@", error);
 
 	return repository;
 }
@@ -249,8 +257,9 @@ static NSString * const FixturesErrorDomain = @"com.objectivegit.Fixtures";
 		GTRepositoryInitOptionsFlags: @(GTRepositoryInitBare | GTRepositoryInitCreatingRepositoryDirectory)
 	};
 
-	GTRepository *repository = [GTRepository initializeEmptyRepositoryAtFileURL:repoURL options:options error:NULL];
-	if (repository == nil) XCTFail(@"Couldn't create a blank repository");
+	NSError *error = nil;
+	GTRepository *repository = [GTRepository initializeEmptyRepositoryAtFileURL:repoURL options:options error:&error];
+	if (repository == nil) XCTFail(@"Couldn't create a blank repository: %@", error);
 
 	return repository;
 }
