@@ -4,7 +4,7 @@
 //
 //  Regression coverage for the custom SSH credential disposal path. On libgit2
 //  0.28.5 the custom-credential free path used strlen() and over-read a
-//  non-NUL-terminated public key (an AddressSanitizer failure); libgit2 1.9.4
+//  non-NUL-terminated public key (an AddressSanitizer failure); libgit2 1.9.6
 //  frees using the stored length and is safe. Run under ASan/UBSan in CI.
 //
 

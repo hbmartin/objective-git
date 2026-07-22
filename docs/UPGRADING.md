@@ -3,7 +3,7 @@
 This guide covers migrating from the previous fork of ObjectiveGit (the
 `gitx/objective-git` lineage, up to commit `85e73a6a`) to this fork. The
 headline change is the upgrade of the bundled libgit2 from **0.28.5 to
-1.9.4**, along with a move to Apple Silicon–only builds, XCFramework
+1.9.6**, along with a move to Apple Silicon–only builds, XCFramework
 packaging for the iOS dependencies, and a round of defensive hardening at
 the libgit2 boundary.
 
@@ -11,7 +11,7 @@ At a glance:
 
 | Area | Before (`85e73a6a`) | Now |
 | --- | --- | --- |
-| libgit2 | 0.28.5 | 1.9.4 |
+| libgit2 | 0.28.5 | 1.9.6 |
 | Architectures | x86_64 + arm64 | arm64 only |
 | iOS dependencies | fat static libraries | XCFrameworks (device + simulator slices) |
 | libgit2 init failure | silently ignored | logged, then `abort()` |
