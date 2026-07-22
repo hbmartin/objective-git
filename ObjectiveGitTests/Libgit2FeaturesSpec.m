@@ -44,12 +44,12 @@ describe(@"libgit", ^{
 });
 
 describe(@"version and backends", ^{
-	it(@"reports libgit2 1.9.4", ^{
+	it(@"reports libgit2 1.9.6", ^{
 		int major = 0, minor = 0, rev = 0;
 		git_libgit2_version(&major, &minor, &rev);
 		expect(@(major)).to(equal(@1));
 		expect(@(minor)).to(equal(@9));
-		expect(@(rev)).to(equal(@4));
+		expect(@(rev)).to(equal(@6));
 	});
 
 	it(@"uses the pthread threads backend", ^{
